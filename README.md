@@ -58,14 +58,17 @@ chromium-browser --app="http://localhost/moodeface.html" \
 ### 2.3 enjoy ;)
 ---
 ## 3. control
-### 3.1 navbar
+### 3.1 main screen
+<img src="images/main.jpg" width="800" height="auto" />
+
+### 3.2 navbar
 <img src="images/navbar.jpg" width="800" height="auto" />
 
-### 3.2 playlist
+### 3.3 playlist
 <img src="images/playlist.jpg" width="800" height="auto" />
 
-### 3.3 keyboard | air mouse
-#### 3.3.1 main screen
+### 3.4 keyboard | air mouse
+#### 3.4.1 main screen
 - **KEY_LEFT** - previous
 - **KEY_RIGHT** - next
 - **KEY_UP** - vol up
@@ -73,7 +76,7 @@ chromium-browser --app="http://localhost/moodeface.html" \
 - **KEY_ENTER** - play/pause
 - **KEY_HOME** - open navbar
 
-#### 3.3.2 navbar
+#### 3.4.2 navbar
 - **KEY_LEFT** - walk left
 - **KEY_RIGHT** - walk right
 - **KEY_UP** - close navbar
@@ -81,7 +84,7 @@ chromium-browser --app="http://localhost/moodeface.html" \
 - **KEY_ENTER** - select
 - **KEY_HOME** - toggle to playlist
 
-#### 3.3.3 playlist
+#### 3.4.3 playlist
 - **KEY_LEFT** - close playlist
 - **KEY_RIGHT** - close playlist
 - **KEY_UP** - walk up
@@ -90,7 +93,7 @@ chromium-browser --app="http://localhost/moodeface.html" \
 - **KEY_HOME** - close playlist
 
 **PS:** each command is bound to several keys. The full list of assigned keys can be seen in the file [moodeface.html](moodeface.html#L724)
-### 3.4 triggerhappy
+### 3.5 triggerhappy
 ```
 cat /etc/triggerhappy/triggers.d/media.conf
 
