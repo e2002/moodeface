@@ -5,19 +5,22 @@
 
 ---
 ## 1. description
-### 1.1 Concept
+### 1.1 concept
 - **backend** - one file
 - **frontend** - one file
 - the **service** runs as the user "nobody" and makes no changes to the Moode distribution files (except for the **"Favorites.m3u"** file).
 - **adaptive** interface designed to work on displays of any resolution (at least that was the intention).
 
-### 1.2 Structure
+### 1.2 structure
 - **/opt/moodeface/moodeface** - backend
 - **/var/www/moodeface.html** - frontend
 - **/etc/systemd/system/moodeface.service** - daemon
 - **/tmp/moodeface.log** - log file
 - **/tmp/moodeface.pid** - PID file
 - **/tmp/mfpipe** - pipe file for processing external commands
+
+### 1.3 functionalities
+- this client does not replace all the features of [moode audio](https://moodeaudio.org), it is just an interface with basic playback control functions.
 ---
 ## 2. install
 
