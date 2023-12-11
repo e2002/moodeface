@@ -89,7 +89,7 @@ chromium-browser --app="http://localhost/moodeface.html" \
 - **KEY_ENTER** - play
 - **KEY_HOME** - close playlist
 
-**PS:** each command is bound to several keys. The full list of assigned keys can be seen in the file [moodeface.html](moodeface.thml#L724)
+**PS:** each command is bound to several keys. The full list of assigned keys can be seen in the file [moodeface.html](moodeface.html#L724)
 ### 3.4 triggerhappy
 ```
 cat /etc/triggerhappy/triggers.d/media.conf
