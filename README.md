@@ -110,6 +110,9 @@ KEY_RIGHT    1  echo next  > /tmp/mfpipe
 ```
 
 ## 4. history
+#### v0.0.407 [2023.12.11]
+- fixed flickering of the album cover when changing tracks
+
 #### v0.0.400 [2023.12.11]
 - first commit
 ---

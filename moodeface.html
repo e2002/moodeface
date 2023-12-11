@@ -1058,7 +1058,7 @@
             this._fasterrors = 60;
             this.connect();
             this._currenttime='';
-            this._cover = '';
+            this._imghash = '';
             this._eltimers = getId('timers');
           }
           connect(){
@@ -1103,18 +1103,19 @@
                   getId("bitrate").textContent=data.bitrate!=''?data.bitrate+' '+data.format:'';
                 }
                 getId("genre").textContent=data.genre;
-                if(this._cover!=data.coverurl){
-                  this._cover=data.coverurl;
-                  /*let coverimage = new Image();
+                if(this._imghash!=data.imghash){
+                  this._imghash=data.imghash;
+                  let imgsrc = `http://${hostname}/${data.coverurl}`;
+                  let coverimage = new Image();
                   coverimage.onload = function () {
-                    let coverstyle=`background-image: url(${this.src});`;
+                    let coverstyle=`background-image: url(${imgsrc});`;
                     getId("cover").attr('style', coverstyle);
                     getId("backdrop").attr('style', coverstyle);
                   };
-                  coverimage.src = `http://${hostname}/${data.coverurl}`;*/
-                  let coversrc=`http://${hostname}/${data.coverurl}`;
-                  getId("cover").attr('style', `background-image: url(${coversrc});`);
-                  getId("backdrop").attr('style', `background-image: url(${coversrc});`);
+                  coverimage.src = imgsrc;
+                  //let coversrc=`http://${hostname}/${data.coverurl}`;
+                  //getId("cover").attr('style', `background-image: url(${coversrc});`);
+                  //getId("backdrop").attr('style', `background-image: url(${coversrc});`);
                 }
                 song.text((data.title=='')?'Streaming source':data.title);
                 getId("playstate").textContent = data.state;

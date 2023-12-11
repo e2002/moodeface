@@ -28,6 +28,7 @@ import sqlite3
 from argparse import ArgumentParser
 import logging
 from urllib.parse import quote
+from urllib.request import urlopen
 from hashlib import md5 as md5sum
 import time
 from websockets import serve as wsserver
@@ -45,9 +46,7 @@ LOGLEVEL  = logging.INFO
 MPD_PLAYLIST_ROOT = '/var/lib/mpd/playlists/'
 
 APPNAME = "moOde fAce"
-VERSION = "0.0.400"
-
-#wsclients = set()
+VERSION = "0.0.407"
 
 class mpdPlayer:
     
@@ -167,7 +166,8 @@ class MpdWatcher:
             'duration':0,
             'serverms': 0,
             'local':False,
-            'favorite': False
+            'favorite': False,
+            'imghash': 0
           }
         self.client.start()
         self.isStarted = False
@@ -440,7 +440,13 @@ class MpdWatcher:
         self.purgeclients()
         for wscli in self._wsclients:
             await wscli.send(data)
-        
+    
+    def imghash(self, url):
+        try:
+            return md5sum(urlopen('http://localhost/%s' % self.song_info['coverurl']).read()).hexdigest()
+        except:
+            return 0
+            
     def startup(self):
         currentsong = self.client.currentsong()
         status = self.client.status()
@@ -478,8 +484,10 @@ class MpdWatcher:
             self.song_info['genre'] = currentsong.get('genre', '')
             file_name, file_extension = os.path.splitext(currentsong['file'])
             self.song_info['format'] = file_extension[1:].upper()
+            
             self.song_info['coverurl'] = quote("coverart.php/%s" % currentsong['file'])
             os.popen("mpc volume %s" % self.song_info['volume'])# force bitrate???
+        self.song_info['imghash'] = self.imghash(self.song_info['coverurl'])
         
     def _imgFromPath(self, path):
         dirname = os.path.dirname(path)
