@@ -110,6 +110,12 @@ KEY_RIGHT    1  echo next  > /tmp/mfpipe
 ```
 
 ## 4. history
+#### v0.0.415 [2023.12.11]
+- fixed an error when restarting the service
+- fixed crash reboot error when changing playlist
+- fixed flickering of the album cover when changing tracks #2
+- other minor fixes
+
 #### v0.0.407 [2023.12.11]
 - fixed flickering of the album cover when changing tracks
 

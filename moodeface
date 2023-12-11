@@ -46,7 +46,7 @@ LOGLEVEL  = logging.INFO
 MPD_PLAYLIST_ROOT = '/var/lib/mpd/playlists/'
 
 APPNAME = "moOde fAce"
-VERSION = "0.0.407"
+VERSION = "0.0.415"
 
 class mpdPlayer:
     
@@ -241,12 +241,12 @@ class MpdWatcher:
     def between_callback(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        ws_server = wsserver(self.hello, '0.0.0.0', 6601)
+        ws_server = wsserver(self._watchws, '0.0.0.0', 6601)
         loop.run_until_complete(ws_server)
         loop.run_forever()
         loop.close()
     
-    async def hello(self, websocket, path):
+    async def _watchws(self, websocket, path):
         self.purgeclients()
         self._wsclients.add(websocket)
         self.song_info['serverms'] = round(time.time() * 1000)
@@ -461,6 +461,8 @@ class MpdWatcher:
         logging.debug('========================startup - end =========================')
         self._nextAvailable = "nextsong" in status
         self.song_info['file'] = currentsong.get('file', '')
+        if self.song_info['file']=='':
+            return
         self.song_info['title'] = currentsong.get('title', '')
         self.song_info['name'] = currentsong.get('name', '')
         self.song_info['volume'] = status.get('volume', '0')
@@ -585,6 +587,7 @@ class MpdWatcher:
                     except Exception as e:
                         logging.error('========================watch - if _read: =========================')
                         logging.error(e)
+                        time.sleep(1)
                         self.client.start()
                 else: # cancels idle
                     self.client.noidle()
@@ -618,6 +621,7 @@ parser = ArgumentParser(description=APPNAME+" v"+VERSION)
 parser.add_argument("-v", "--version", action="version", version=APPNAME+" v"+VERSION)
 parser.add_argument("-k", "--kill", action="store_true", help="Kill all instances and exit")
 parser.add_argument("-r", "--replace", action="store_true", help="Kill all instances and run new")
+parser.add_argument("-d", "--debug", action="store_true", help="Debug mode")
 
 args = parser.parse_args()
 
@@ -639,7 +643,7 @@ if os.path.exists(PIDFILE):
         print("something is real weird")
         sys.exit(0)
     else:
-        if  "wsmpd" in get_pname(pidString):
+        if "moodeface" in get_pname(pidString):
             if args.kill or args.replace:
                 os.popen("kill {}".format(pidString))
             else:
@@ -660,7 +664,7 @@ print("PID:\t%s" % os.getpid())
 print("COMMAND: %s" % get_pname(os.getpid()))
 logging.getLogger("websockets").setLevel(logging.CRITICAL)
 logging.getLogger('asyncio').setLevel(logging.WARNING)
-logging.basicConfig(level=LOGLEVEL, filename=LOGFILE, filemode="a",
+logging.basicConfig(level=logging.DEBUG if args.debug else LOGLEVEL, filename=LOGFILE, filemode="a",
                 format="%(asctime)s [%(levelname)s] %(message)s")
 _log = logging.getLogger('foobar')
 sys.stderr = StreamToLogger(_log,logging.ERROR)

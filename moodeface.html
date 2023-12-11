@@ -35,7 +35,7 @@
         }
         body {
           height: 100%;
-          background-color: #444;
+          background-color: #000;
         }
         body {
           color: #fff;
@@ -53,12 +53,19 @@
           overflow: hidden;
         }
         #backdrop {
-          height: calc(100% + 10vmin);
-          margin: -5vmin;
+          min-width: calc(100vw + 10vmin);
+          min-height: calc(100vh + 10vmin);
+          max-width: unset;
+          transform: translate(-50%,-50%);
+          background-position: 50%;
+          position: relative;
+          top: 50vh;
+          left: 50vw;
+          position: relative;
           filter: blur(3.5vmin);
-          background-position: center center;
-          background-repeat: no-repeat;
-          background-size: cover;
+        }
+        #backdrop[src=""]{
+          visibility: hidden;
         }
         #screensaver {
           background: rgba(0,0,0,0.85);
@@ -249,6 +256,13 @@
           background-size: cover;
           cursor: pointer;
           position: relative;
+        }
+        #coverimg {
+          width: 100%;
+          height: 100%;
+        }
+        #coverimg[src=""]{
+          visibility: hidden;
         }
         #favorite {
           padding: 2vmin;
@@ -559,7 +573,7 @@
     </style>
 </head>
 <body>
-    <div id="backdropwrap" class="transform"><div id="backdrop"></div></div>
+    <div id="backdropwrap" class="transform"><img id="backdrop" alt=" " src=""></div>
     <div id="screensaver" class="hidden transform"></div>
     <div id="player" class="transform">
       <div id="title"><div></div></div>
@@ -580,6 +594,7 @@
           </div>
         </div>
         <div id="cover" class="button" data-target="navbartoggle">
+          <img id="coverimg"  alt=" " src="" />
           <div id="favorite" class="button active" data-target="favorite" data-item="">
             <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -1105,17 +1120,7 @@
                 getId("genre").textContent=data.genre;
                 if(this._imghash!=data.imghash){
                   this._imghash=data.imghash;
-                  let imgsrc = `http://${hostname}/${data.coverurl}`;
-                  let coverimage = new Image();
-                  coverimage.onload = function () {
-                    let coverstyle=`background-image: url(${imgsrc});`;
-                    getId("cover").attr('style', coverstyle);
-                    getId("backdrop").attr('style', coverstyle);
-                  };
-                  coverimage.src = imgsrc;
-                  //let coversrc=`http://${hostname}/${data.coverurl}`;
-                  //getId("cover").attr('style', `background-image: url(${coversrc});`);
-                  //getId("backdrop").attr('style', `background-image: url(${coversrc});`);
+                  getId("coverimg").src = `http://${hostname}/${data.coverurl}`;
                 }
                 song.text((data.title=='')?'Streaming source':data.title);
                 getId("playstate").textContent = data.state;
@@ -1577,7 +1582,9 @@
             event.stopPropagation();
           }, false);
         });
-        
+        getId("coverimg").onload = function(){
+          getId("backdrop").src = this.src;
+        }
     </script>
 </body>
 </html>
