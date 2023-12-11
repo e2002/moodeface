@@ -1,0 +1,667 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# 
+# This file is part of the "moOdefAce" distribution (https://github.com/e2002/moodeface).
+# Copyright (c) 2023 e2002 <e2002@bk.ru>.
+# 
+# This program is free software: you can redistribute it and/or modify  
+# it under the terms of the GNU General Public License as published by  
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+ 
+import musicpd
+from select import select as waitdata
+import socket
+import json
+import os, sys
+import time
+import sqlite3
+from argparse import ArgumentParser
+import logging
+from urllib.parse import quote
+from hashlib import md5 as md5sum
+import time
+from websockets import serve as wsserver
+import threading
+import asyncio
+
+HOST = '192.168.7.118'
+HOST = 'localhost'
+PORT = '6600'
+PIDFILE = "/tmp/moodeface.pid"
+DBPATH = "/var/local/www/db/moode-sqlite3.db"
+COVERPATH = "/var/local/www/"
+LOGFILE = "/tmp/moodeface.log"
+LOGLEVEL  = logging.INFO
+MPD_PLAYLIST_ROOT = '/var/lib/mpd/playlists/'
+
+APPNAME = "moOde fAce"
+VERSION = "0.0.400"
+
+#wsclients = set()
+
+class mpdPlayer:
+    
+    def __init__(self, host="localhost", port='6600'):
+        self._host = host
+        self._port = port
+        self._client = musicpd.MPDClient()
+        self._client.socket_timeout = 10
+        self._connected = False
+        self._srartup = True
+        
+    def _connect(self):
+        if self._srartup:
+            logging.debug('mpdPlayer._connect, Connecting to MPD host %s:%s' % (self._host, self._port))
+        else:
+            logging.info('Connecting to MPD host %s:%s' % (self._host, self._port))
+        try:
+            self._client.connect(self._host, self._port)
+            self._connected = True
+        except Exception as e:
+            pass
+    
+    def _disconnect(self):
+        try:
+            self._client.disconnect()           
+        except:
+            pass
+
+    def _ensure__connection(self):
+        try:
+            self._client.ping()
+            self._connected = True
+            self._srartup = False
+        except (musicpd.MPDError, musicpd.ConnectionError, IOError) as e:
+            if not self._srartup:
+                logging.error("mpdPlayer._ensure__connection, %s" % e)
+            self._disconnect()
+            self._connected = False
+            self._connect()
+    
+    def connected(self):
+        return self._connected
+        
+    def mpd(self):
+        return self._client
+        
+    def start(self):
+        self._ensure__connection()
+        
+    def stop(self):
+        self._ensure__connection()
+        self._client.stop()
+        
+    def status(self):
+        self._ensure__connection()
+        return self._client.status()
+        
+    def currentsong(self):
+        self._ensure__connection()
+        return self._client.currentsong()
+ 
+    def is_playing(self):
+        status = self.status()
+        return status['state'] == 'play'
+        
+    def send_idle(self):
+        #self._ensure__connection()
+        return self._client.send_idle()
+        
+    def fetch_idle(self):
+        #self._ensure__connection()
+        return self._client.fetch_idle()
+    
+    def noidle(self):
+        #self._ensure__connection()
+        try:
+            return self._client.noidle()
+        except:
+            return
+
+class RepeatTimer(threading.Timer):
+    def run(self):
+        while not self.finished.wait(self.interval):
+            self.function(*self.args, **self.kwargs)
+            
+class MpdWatcher:
+
+    def __init__(self, host, port):
+        self.select_timeout = 1
+        self.client = mpdPlayer(host, port)
+        self._wsclients = set()
+        self._currentPlaylist = None
+        self._currentSong = None
+        self._nextAvailable = False
+        self._localFile = False
+        self._controlsLocked = False
+        self._magick = 0;
+        self._localhost = 0;
+        self.song_info = {
+            'file': '', 
+            'title': '', 
+            'name': '', 
+            'displayname': '', 
+            'coverurl': '', 
+            'volume': '0', 
+            'state': '', 
+            'bitrate': '0', 
+            'ip': '', 
+            'genre': '', 
+            'format': '',
+            'id': 0,
+            'mute': False,
+            'repeat': False,
+            'random': False,
+            'single': False,
+            'elapsed':0,
+            'duration':0,
+            'serverms': 0,
+            'local':False,
+            'favorite': False
+          }
+        self.client.start()
+        self.isStarted = False
+        self.ws = threading.Thread(target=self.between_callback, daemon=True)
+        self.ws.start()
+        self.piper = threading.Thread(target=self._watchPipe, daemon=True)
+        self.piper.start()
+        self.favorites_path = '%sFavorites.m3u' % MPD_PLAYLIST_ROOT
+        con = sqlite3.connect(DBPATH)
+        cur = con.cursor()
+        res = cur.execute("SELECT value FROM cfg_system WHERE param='favorites_name'")
+        fav = res.fetchone()
+        if(fav[0]):
+            self.favorites_path = '%s%s.m3u' % (MPD_PLAYLIST_ROOT, fav[0])
+        if not os.path.exists(self.favorites_path):
+            os.popen('touch "%s"' % (self.favorites_path));
+            os.popen('chmod 0777 "%s"' % (self.favorites_path));
+            os.popen('echo "#EXTGENRE:Various" >> "%s"' % (self.favorites_path));
+            os.popen('echo "#EXTIMG:local" >> "%s"' % (self.favorites_path));
+
+        self.watch()
+
+    def _watchPipe(self):
+        pipe_path = "/tmp/mfpipe"
+        if not os.path.exists(pipe_path):
+            os.mkfifo(pipe_path, 0o0666)
+        pipe_fd = os.open(pipe_path, os.O_RDONLY | os.O_NONBLOCK)
+        _pipe = os.fdopen(pipe_fd)
+        while True:
+            read, _, _ = waitdata([_pipe],[],[])
+            if read and self._localhost==0:
+                lines = _pipe.read().split("\n")
+                for line in lines:
+                    message = line.strip().split(" ")
+                    if message[0] and not self._controlsLocked:
+                        logging.debug("Received: '%s'" % message)
+                        try:
+                            if any(nav in message for nav in ("up", "down", "left", "right", "enter", "prev", "next")):
+                                self._processMessage(message[0])
+                        except Exception as e:
+                            logging.error('========================_watchPipe =========================')
+                            logging.error(e)
+            time.sleep(0.1)
+    
+    def _processMessage(self, msg):
+        if self._controlsLocked:
+            return
+        if msg=="enter":
+            os.popen("mpc toggle")
+        if msg=="prev":
+            os.popen("mpc prev")
+        if msg=="next":
+            logging.debug(self._nextAvailable)
+            if self._nextAvailable:
+                os.popen("mpc next")
+        if msg=="up":
+            os.popen("/var/www/vol.sh -up 1")
+        if msg=="down":
+            os.popen("/var/www/vol.sh -dn 1")
+    
+    def getIp(self):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            addr = s.getsockname()[0]
+            s.close()
+            return addr
+        except:
+            return ''
+    
+    def between_callback(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        ws_server = wsserver(self.hello, '0.0.0.0', 6601)
+        loop.run_until_complete(ws_server)
+        loop.run_forever()
+        loop.close()
+    
+    async def hello(self, websocket, path):
+        self.purgeclients()
+        self._wsclients.add(websocket)
+        self.song_info['serverms'] = round(time.time() * 1000)
+        await websocket.send(json.dumps(self.song_info))
+        await websocket.send(json.dumps(self._currentPlaylist))
+        async for data in websocket:
+            logging.debug(f"Received: '{data}'")
+            try:
+                payload = json.loads(data)
+                if "cmd" in payload:
+                    if payload["cmd"]=="toggle":
+                        os.popen("mpc toggle")
+                    if payload["cmd"]=="vol":
+                        vol = int(self.song_info['volume'])
+                        if vol==0:
+                            if self._checkMuted():
+                                os.popen("/var/www/vol.sh mute")
+                                time.sleep(0.3)
+                        os.popen("/var/www/vol.sh %s" % int(payload["value"]))
+                    if payload["cmd"]=="prev":
+                        os.popen("mpc prev")
+                    if payload["cmd"]=="next" and self._nextAvailable:
+                        os.popen("mpc next")
+                    if payload["cmd"]=="play":
+                        os.popen("mpc play %s" % int(payload["payload"]))
+                    if payload["cmd"]=="seek":
+                        if self._localFile:
+                            os.popen("mpc seek %s%%" % int(payload["payload"]))
+                    if payload["cmd"]=="mutetoggle":
+                        os.popen("/var/www/vol.sh -mute")
+                    if payload["cmd"]=="randomtoggle":
+                        os.popen("mpc random")
+                    if payload["cmd"]=="walkrepeat":
+                        os.popen("mpc repeat")
+                        if not self.song_info['repeat']:
+                            os.popen("mpc single")
+                    if payload["cmd"]=="favorite":
+                        item = payload["payload"]
+                        add = payload["action"]=='add'
+                        contains = len(os.popen('fgrep "%s" %s' % (item, self.favorites_path)).readlines())>0
+                        self.song_info['favorite']=add # Optimistic!
+                        if add:
+                            if not contains:
+                                os.popen('echo "%s" >> "%s"' % (item, self.favorites_path))
+                        else:
+                            if contains:
+                                with open(self.favorites_path, "r") as fp:
+                                    lines = fp.readlines()
+                                with open(self.favorites_path, "w") as fp:
+                                    for line in lines:
+                                        if line.strip("\n") != item:
+                                            fp.write(line)
+                    if payload["cmd"]=="loadpl":
+                        os.popen("mpc clear; mpc load \"%s\"; mpc play" % (payload["payload"]))
+                if "key" in payload:
+                    if payload["key"]=="LOCK":
+                        self._controlsLocked=payload["code"]
+                        if self._controlsLocked:
+                           await self.sendToAll(json.dumps({"magick": payload["magick"]})) 
+                    else:
+                        if payload["msg"]:
+                            self._processMessage(payload["msg"])
+                    logging.debug("key=%s, code=%s, magick=%s, msg=%s" % (payload["key"], payload["code"], payload["magick"], payload["msg"]))
+                if "localhost" in  payload:
+                    self._localhost=payload["localhost"]
+                    logging.debug('======================== localhost.magick =========================')
+                    logging.debug(self._localhost)
+            except:
+                pass
+
+    def _elapsedConvert(self, seconds):
+        seconds = float(seconds) % (24 * 3600)
+        hour = seconds // 3600
+        seconds %= 3600
+        minutes = seconds // 60
+        seconds %= 60
+        return "%02d:%02d" % (minutes, seconds)
+        
+    def _processTimer(self):
+        try:
+            if self._localFile and self.client.is_playing():
+                elapsed = float(self.client.mpd().status()['elapsed'])
+                duration = float(self.client.mpd().status()['duration'])
+                self.song_info['elapsed'] = round(elapsed*1000)
+                self.song_info['duration'] = round(duration*1000)
+            else:
+                self.song_info['elapsed'] = 0
+                self.song_info['duration'] = 0
+            if not self.client.is_playing():
+                sms = round(time.time() * 1000)
+                if round(sms/1000) % 600 == 0:
+                    self.song_info['serverms'] = sms
+                    asyncio.run(self.sendToAll(json.dumps({"time":self.song_info['serverms'], "local": self._localFile})))
+        except Exception as e:
+            logging.error('========================_processTimer =========================')
+            logging.error(e)
+            pass
+    
+    def _getSongWrapped(self):
+        try:
+            con = sqlite3.connect(DBPATH)
+            cur = con.cursor()
+            res = cur.execute("SELECT name, genre, bitrate, format  FROM cfg_radio WHERE station='%s'" % (self.song_info['file']))
+            ainfo = res.fetchone()
+            logging.debug('')
+            logging.debug('========================_getSongWrapped - ainfo =========================')
+            logging.debug(ainfo)
+            if ainfo:
+                if ainfo[0]:
+                    self.song_info['displayname']=ainfo[0]
+                    imgpath = "%simagesw/radio-logos/%s.jpg" % (COVERPATH, ainfo[0])
+                    if os.path.exists(imgpath):
+                        urlpath = quote(imgpath.replace(COVERPATH, ""))
+                        logging.debug('')
+                        logging.debug('========================_getSongWrapped - urlpath =========================')
+                        logging.debug(urlpath)
+                        self.song_info['coverurl'] = urlpath
+                    else:
+                        self.song_info['coverurl'] = "images/default-cover-v6.svg"
+                else:
+                    self.song_info['displayname'] = self.song_info['name']
+                    self.song_info['coverurl'] = "images/default-cover-v6.svg"
+                self.song_info['genre'] = ainfo[1]
+                if ainfo[2]:
+                    self.song_info['bitrate'] = ainfo[2]
+                self.song_info['format'] = ainfo[3].upper()
+            else:
+                self.song_info['displayname'] = self.song_info['name']
+                self.song_info['coverurl'] = "images/default-cover-v6.svg"
+            
+            
+        except (sqlite3.Error, IOError) as e:
+            logging.error("_getSongWrapped sqlite3 - Error connecting to %s" % DBPATH)
+            logging.error(e)
+    
+    def _checkMuted(self):
+        try:
+            con = sqlite3.connect(DBPATH)
+            cur = con.cursor()
+            res = cur.execute("SELECT value FROM cfg_system WHERE param='volmute'")
+            sysinfo = res.fetchone()
+            if sysinfo:
+                if sysinfo[0]:
+                    return int(sysinfo[0])==1
+                else:
+                    return False
+            else:
+                return False
+        except (sqlite3.Error, IOError) as e:
+            logging.error("_checkMuted sqlite3 - Error connecting to %s" % DBPATH)
+            logging.error(e)
+            return False
+                    
+    def _getPlaylistWrapped(self, item):
+        url = item['file']
+        ret = {'title': '', 'song': '', 'duration': '', 'cover': '', 'url': url, 'genre': '', 'id': int(item['pos'])+1}
+        try:
+            con = sqlite3.connect(DBPATH)
+            cur = con.cursor()
+            res = cur.execute("SELECT name, genre, bitrate, format  FROM cfg_radio WHERE station='%s'" % (url))
+            ainfo = res.fetchone()
+            if ainfo:
+                if ainfo[0]:
+                    ret['title']=ainfo[0]
+                    imgpath = "%simagesw/radio-logos/thumbs/%s.jpg" % (COVERPATH, ainfo[0])
+                    if os.path.exists(imgpath):
+                        urlpath = quote(imgpath.replace(COVERPATH, ""))
+                        ret['cover'] = urlpath
+                    else:
+                        ret['cover'] = "images/default-cover-v6.png"
+                else:
+                    ret['title'] = url
+                    ret['cover'] = "images/default-cover-v6.png"
+                ret['genre'] = ainfo[1]
+            else:
+                ret['title'] = url
+                ret['cover'] = "images/default-cover-v6.png"
+            
+            return ret
+        except (sqlite3.Error, IOError) as e:
+            logging.error("_getPlaylistWrapped sqlite3 - Error connecting to %s" % DBPATH)
+            logging.error(e)
+            return False
+            
+    def purgeclients(self):
+        for wscli in self._wsclients.copy():
+            if not wscli.open:
+                self._wsclients.remove(wscli)
+    
+    async def sendToAll(self, data):
+        self.purgeclients()
+        for wscli in self._wsclients:
+            await wscli.send(data)
+        
+    def startup(self):
+        currentsong = self.client.currentsong()
+        status = self.client.status()
+        logging.debug('')
+        logging.debug('========================startup - currentsong =========================')
+        logging.debug(currentsong)
+        logging.debug('')
+        logging.debug('========================startup - status =========================')
+        logging.debug(status)
+        logging.debug('========================startup - self.client.mpd().listplaylists() =========================')
+        logging.debug(self.client.mpd().listplaylists())
+        logging.debug('========================startup - end =========================')
+        self._nextAvailable = "nextsong" in status
+        self.song_info['file'] = currentsong.get('file', '')
+        self.song_info['title'] = currentsong.get('title', '')
+        self.song_info['name'] = currentsong.get('name', '')
+        self.song_info['volume'] = status.get('volume', '0')
+        self.song_info['state'] = status.get('state', '')
+        self.song_info['bitrate'] = status.get('bitrate', '')
+        self.song_info['ip'] = self.getIp()
+        self.song_info['id'] = int(currentsong.get('pos', -1))+1
+        self.song_info['mute'] = self._checkMuted()
+        self.song_info['repeat'] = True if status.get('repeat', '0')=='1' else False
+        self.song_info['random'] = True if status.get('random', '0')=='1' else False
+        self.song_info['single'] = True if status.get('single', '0')=='1' else False
+        self.song_info['elapsed'] = round(float(status.get('elapsed', 0))*1000)
+        self.song_info['duration'] = round(float(status.get('duration', 0))*1000)
+        self.song_info['favorite'] = len(os.popen('fgrep "%s" /var/lib/mpd/playlists/Favorites.m3u' % self.song_info['file']).readlines())>0
+        self._localFile = not self.song_info['file'].startswith('http')
+        self.song_info['local'] = self._localFile
+        if not self._localFile:
+            self._getSongWrapped()
+        else:
+            self.song_info['displayname'] = '%s - %s' % (currentsong.get('artist', ''), currentsong.get('album', ''))
+            self.song_info['genre'] = currentsong.get('genre', '')
+            file_name, file_extension = os.path.splitext(currentsong['file'])
+            self.song_info['format'] = file_extension[1:].upper()
+            self.song_info['coverurl'] = quote("coverart.php/%s" % currentsong['file'])
+            os.popen("mpc volume %s" % self.song_info['volume'])# force bitrate???
+        
+    def _imgFromPath(self, path):
+        dirname = os.path.dirname(path)
+        file_name, file_extension = os.path.splitext(dirname)
+        if file_extension=='.cue':
+            dirname = os.path.dirname(dirname)
+        imgpath = "%simagesw/thmcache/%s.jpg" % (COVERPATH, md5sum(dirname.encode()).hexdigest())
+        urlpath=''
+        if os.path.exists(imgpath):
+            urlpath = quote(imgpath.replace(COVERPATH, ""))
+        else:
+            urlpath = "images/default-cover-v6.png"
+        return urlpath
+    
+    def _sendPlaylist(self, sendAll=True):
+        out = {'playlist': [], 'all': []}
+        playlist = self.client.mpd().playlistinfo()
+        for plitem in playlist:
+            if plitem['file'].startswith('http'):
+                pi = self._getPlaylistWrapped(plitem)
+            else:
+                pi = {'title': '%s - %s' % (plitem.get('artist', ''), plitem.get('album', '')), 'song': plitem.get('title', ''), 'duration': self._elapsedConvert(plitem.get('duration', 0)), 'cover': self._imgFromPath(plitem['file']), 'url': plitem['file'], 'genre': plitem.get('genre', ''), 'id': int(plitem['pos'])+1}
+            out['playlist'].append(pi)
+        out['all'] = self.client.mpd().listplaylists()
+        if out!=self._currentPlaylist:
+            if sendAll:
+                asyncio.run(self.sendToAll(json.dumps(out)))
+            self._currentPlaylist=out
+        
+    def watch(self):
+        while True:
+            if not self.client.connected():
+                try:
+                    self.client.start()
+                except:
+                    pass
+            else:
+                if not self.isStarted:
+                    self.isStarted = True
+                    self.startup()
+                    self._sendPlaylist(False)
+                    logging.debug('')
+                    logging.debug('========================watch - if not self.isStarted - self.song_info =========================')
+                    logging.debug(self.song_info)
+                try:
+                    self.client.send_idle()
+                except:
+                    self.client.start()
+                    continue
+
+                _read, _, _ = waitdata([self.client.mpd()], [], [], self.select_timeout)
+                if _read:
+                    try:
+                        ret = self.client.fetch_idle()
+                        event=', '.join(ret)
+                        logging.debug('')
+                        logging.debug('========================watch - if _read: - event =========================')
+                        logging.debug(event)
+                        #if("player" in ret):
+                        if("player" in ret and not "playlist" in ret):
+                            self.startup()
+                            os.popen("mpc volume")
+                        #if("playlist" in ret):
+                        #    self.moodeInfo()
+                        if("playlist" in ret):
+                            self.startup()
+                            self._sendPlaylist()
+                        if("mixer" in ret):
+                            status = self.client.status()
+                            logging.debug('')
+                            logging.debug('========================watch - if _read: - mixer =========================')
+                            logging.debug(status)
+                            self.song_info['volume'] = status.get('volume', '0')
+                            self.song_info['state'] = status.get('state', '')
+                            self.song_info['bitrate'] = status.get('bitrate', '')
+                            self.song_info['mute'] = self._checkMuted()
+                            self.song_info['elapsed'] = round(float(status.get('elapsed', 0))*1000)
+                            self.song_info['duration'] = round(float(status.get('duration', 0))*1000)
+                        if("options" in ret):
+                            status = self.client.status()
+                            logging.debug('')
+                            logging.debug('========================watch - if _read: - options =========================')
+                            logging.debug(status)
+                            self.song_info['repeat'] = True if status.get('repeat', '0')=='1' else False
+                            self.song_info['random'] = True if status.get('random', '0')=='1' else False
+                            self.song_info['single'] = True if status.get('single', '0')=='1' else False
+                            self.song_info['elapsed'] = round(float(status.get('elapsed', 0))*1000)
+                            self.song_info['duration'] = round(float(status.get('duration', 0))*1000)
+                        logging.debug('')
+                        logging.debug('========================watch - if _read: - song_info =========================')
+                        logging.debug(self.song_info)
+                        self._currentSong=self.song_info
+                        self.song_info['serverms'] = round(time.time() * 1000)
+                        asyncio.run(self.sendToAll(json.dumps(self.song_info)))
+                    except Exception as e:
+                        logging.error('========================watch - if _read: =========================')
+                        logging.error(e)
+                        self.client.start()
+                else: # cancels idle
+                    self.client.noidle()
+                    self._processTimer()
+
+class StreamToLogger(object):
+    """
+    Fake file-like stream object that redirects writes to a logger instance.
+    """
+    def __init__(self, logger, level):
+       self.logger = logger
+       self.level = level
+       self.linebuf = ''
+
+    def write(self, buf):
+       for line in buf.rstrip().splitlines():
+          self.logger.log(self.level, line.rstrip())
+
+    def flush(self):
+        pass
+        
+def watchMpd():
+    try:
+        watch = MpdWatcher(HOST, PORT)
+        #watch.watch()
+    except KeyboardInterrupt:
+        print()
+        pass
+        
+parser = ArgumentParser(description=APPNAME+" v"+VERSION)
+parser.add_argument("-v", "--version", action="version", version=APPNAME+" v"+VERSION)
+parser.add_argument("-k", "--kill", action="store_true", help="Kill all instances and exit")
+parser.add_argument("-r", "--replace", action="store_true", help="Kill all instances and run new")
+
+args = parser.parse_args()
+
+def get_pname(id):
+    return os.popen("ps -o cmd= {}".format(id)).read().strip()
+    
+def writePid():
+    pidfile = open(PIDFILE,"w")
+    pidfile.write("{}".format((os.getpid())))
+    pidfile.close()
+    
+print(APPNAME+" v"+VERSION)
+
+if os.path.exists(PIDFILE):
+    pidfile = open(PIDFILE,"r")
+    pidString = pidfile.read()
+    pidfile.close()
+    if int(pidString)==os.getpid():
+        print("something is real weird")
+        sys.exit(0)
+    else:
+        if  "wsmpd" in get_pname(pidString):
+            if args.kill or args.replace:
+                os.popen("kill {}".format(pidString))
+            else:
+                print("process %s %s already running" % (pidString, get_pname(pidString)))
+            if not args.replace:
+                sys.exit(0)
+            else:
+                writePid()
+        else:
+            if args.kill:
+                sys.exit(0)
+            pidfile.close()
+            writePid()
+else:
+    writePid()
+
+print("PID:\t%s" % os.getpid())
+print("COMMAND: %s" % get_pname(os.getpid()))
+logging.getLogger("websockets").setLevel(logging.CRITICAL)
+logging.getLogger('asyncio').setLevel(logging.WARNING)
+logging.basicConfig(level=LOGLEVEL, filename=LOGFILE, filemode="a",
+                format="%(asctime)s [%(levelname)s] %(message)s")
+_log = logging.getLogger('foobar')
+sys.stderr = StreamToLogger(_log,logging.ERROR)
+logging.info("------------------------------------------------")
+logging.info('')
+logging.info("************************************************")
+logging.info("*          %s v%s started         *" % (APPNAME, VERSION))
+logging.info("************************************************")
+logging.info('')
+
+if __name__ == '__main__':
+    watchMpd()

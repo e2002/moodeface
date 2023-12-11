@@ -1,2 +1,109 @@
-# moodeface
-Client for moOde™ audio player https://moodeaudio.org
+# moOde fAce
+##### Client for moOde™ audio player https://moodeaudio.org
+
+<img src="images/mf01.jpg" width="830" height="auto" />
+
+---
+## 1. description
+### 1.1 Concept
+- **backend** - one file
+- **frontend** - one file
+- the **service** runs as the user "nobody" and makes no changes to the Moode distribution files (except for the **"Favorites.m3u"** file).
+- **adaptive** interface designed to work on displays of any resolution (at least that was the intention).
+
+### 1.2 Structure
+- **/opt/moodeface/moodeface** - backend
+- **/var/www/moodeface.html** - frontend
+- **/etc/systemd/system/moodeface.service** - daemon
+- **/tmp/moodeface.log** - log file
+- **/tmp/moodeface.pid** - PID file
+- **/tmp/mfpipe** - pipe file for processing external commands
+---
+## 2. install
+
+### 2.1.a manual
+```
+git clone https://github.com/e2002/moodeface
+cd moodeface
+sudo mkdir -p /opt/moodeface
+sudo cp moodeface /opt/moodeface
+sudo chmod +x /opt/moodeface/moodeface
+sudo cp moodeface.html /var/www/
+sudo cp moodeface.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable moodeface.service
+sudo systemctl start moodeface.service
+```
+### 2.1.b from deb package
+- download the latest deb from https://github.com/e2002/moodeface/releases/latest
+- and install it
+```
+sudo dpkg -i moodeface_*version*.deb
+```
+
+### 2.2 launch
+- go to the link http://\<moodeip\>/moodeface.html
+- or open the file moodeface.html?\<moodeip\> in your browser
+
+### 2.2,5 optional, for Local UI:
+modify **~/.xinitrc file** , replace
+```
+chromium-browser --app="http://localhost/" \
+```
+to
+```
+chromium-browser --app="http://localhost/moodeface.html" \
+
+```
+### 2.3 enjoy ;)
+---
+## 3. control
+### 3.1 navbar
+<img src="images/navbar.jpg" width="800" height="auto" />
+
+### 3.2 playlist
+<img src="images/playlist.jpg" width="800" height="auto" />
+
+### 3.3 keyboard | air mouse
+#### 3.3.1 main screen
+- **KEY_LEFT** - previous
+- **KEY_RIGHT** - next
+- **KEY_UP** - vol up
+- **KEY_DOWN** - vol down
+- **KEY_ENTER** - play/pause
+- **KEY_HOME** - open navbar
+
+#### 3.3.2 navbar
+- **KEY_LEFT** - walk left
+- **KEY_RIGHT** - walk right
+- **KEY_UP** - close navbar
+- **KEY_DOWN** - close navbar
+- **KEY_ENTER** - select
+- **KEY_HOME** - toggle to playlist
+
+#### 3.3.3 playlist
+- **KEY_LEFT** - close playlist
+- **KEY_RIGHT** - close playlist
+- **KEY_UP** - walk up
+- **KEY_DOWN** - walk down
+- **KEY_ENTER** - play
+- **KEY_HOME** - close playlist
+
+**PS:** each command is bound to several keys. The full list of assigned keys can be seen in the file [moodeface.html](moodeface.thml#L724)
+### 3.4 triggerhappy
+```
+cat /etc/triggerhappy/triggers.d/media.conf
+
+KEY_UP       1  echo up    > /tmp/mfpipe
+KEY_UP       2  echo up    > /tmp/mfpipe
+KEY_DOWN     1  echo down  > /tmp/mfpipe
+KEY_DOWN     2  echo down  > /tmp/mfpipe
+KEY_ENTER    0  echo enter > /tmp/mfpipe
+KEY_LEFT     1  echo prev  > /tmp/mfpipe
+KEY_RIGHT    1  echo next  > /tmp/mfpipe
+```
+
+## 4. history
+#### v0.0.400 [2023.12.11]
+- first commit
+---

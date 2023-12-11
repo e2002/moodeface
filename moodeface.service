@@ -1,0 +1,13 @@
+[Unit]
+Description=moOde fAce service
+After=network.target
+After=mpd.service
+
+[Service]
+ExecStart=/opt/moodeface/moodeface -r
+ExecStop=/opt/moodeface/moodeface -k
+User=nobody
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
