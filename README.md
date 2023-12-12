@@ -26,6 +26,7 @@
 
 ### 2.1.a manual
 ```
+sudo apt install python3-websockets
 git clone https://github.com/e2002/moodeface
 cd moodeface
 sudo mkdir -p /opt/moodeface
@@ -41,6 +42,7 @@ sudo systemctl start moodeface.service
 - download the latest deb from https://github.com/e2002/moodeface/releases/latest
 - and install it
 ```
+sudo apt install python3-websockets
 sudo dpkg -i moodeface_*version*.deb
 ```
 
