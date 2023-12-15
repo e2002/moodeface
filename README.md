@@ -112,6 +112,10 @@ KEY_RIGHT    1  echo next  > /tmp/mfpipe
 ```
 
 ## 4. history
+#### v0.0.501 [2023.12.15]
+- optimization, refactoring
+- bugs fixes
+
 #### v0.0.415 [2023.12.11]
 - fixed an error when restarting the service
 - fixed crash reboot error when changing playlist

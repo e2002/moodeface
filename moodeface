@@ -46,7 +46,7 @@ LOGLEVEL  = logging.INFO
 MPD_PLAYLIST_ROOT = '/var/lib/mpd/playlists/'
 
 APPNAME = "moOde fAce"
-VERSION = "0.0.415"
+VERSION = "0.0.501"
 
 class mpdPlayer:
     
@@ -482,7 +482,15 @@ class MpdWatcher:
         if not self._localFile:
             self._getSongWrapped()
         else:
-            self.song_info['displayname'] = '%s - %s' % (currentsong.get('artist', ''), currentsong.get('album', ''))
+            artist = currentsong.get('artist', '')
+            album = currentsong.get('album', '')
+            self.song_info['displayname'] = '%s - %s' % (artist, album)
+            if artist=='':
+                self.song_info['displayname'] = album
+            if album=='':
+                self.song_info['displayname'] = artist
+            if artist=='' and album=='':
+                self.song_info['displayname'] = os.path.splitext(os.path.basename(self.song_info['file']))[0]
             self.song_info['genre'] = currentsong.get('genre', '')
             file_name, file_extension = os.path.splitext(currentsong['file'])
             self.song_info['format'] = file_extension[1:].upper()
@@ -511,7 +519,16 @@ class MpdWatcher:
             if plitem['file'].startswith('http'):
                 pi = self._getPlaylistWrapped(plitem)
             else:
-                pi = {'title': '%s - %s' % (plitem.get('artist', ''), plitem.get('album', '')), 'song': plitem.get('title', ''), 'duration': self._elapsedConvert(plitem.get('duration', 0)), 'cover': self._imgFromPath(plitem['file']), 'url': plitem['file'], 'genre': plitem.get('genre', ''), 'id': int(plitem['pos'])+1}
+                artist = plitem.get('artist', '')
+                album = plitem.get('album', '')
+                title = '%s - %s' % (artist, album)
+                if artist=='':
+                    title = album
+                if album=='':
+                    title = artist
+                if artist=='' and album=='':
+                    title = os.path.splitext(os.path.basename(plitem['file']))[0]
+                pi = {'title': title, 'song': plitem.get('title', ''), 'duration': self._elapsedConvert(plitem.get('duration', 0)), 'cover': self._imgFromPath(plitem['file']), 'url': plitem['file'], 'genre': plitem.get('genre', ''), 'id': int(plitem['pos'])+1}
             out['playlist'].append(pi)
         out['all'] = self.client.mpd().listplaylists()
         if out!=self._currentPlaylist:

@@ -29,25 +29,20 @@
           box-sizing: border-box;
           user-select: none;
         }
-        html {
-            height: 100%;
-            overflow: hidden;
-        }
-        body {
-          height: 100%;
-          background-color: #000;
+        html, body {
+          height: 100vh;
+          width: 100vw;
+          overflow: hidden;
+          position: fixed;
         }
         body {
           color: #fff;
+          background-color: #000;
           font-family: Tahoma, Helvetica, Arial, Sans, sans-serif;
           padding: 0;
           margin: 0;
-          overflow: hidden;
         }
-        .transform{
-          transform: translateZ(0);
-        }
-        #backdropwrap, #screensaver{
+        #backdropwrap, #screensaver, #popup{
           position: absolute;
           top: 0; right: 0; bottom: 0; left: 0;
           overflow: hidden;
@@ -61,7 +56,6 @@
           position: relative;
           top: 50vh;
           left: 50vw;
-          position: relative;
           filter: blur(3.5vmin);
         }
         #backdrop[src=""]{
@@ -92,8 +86,28 @@
         #screensaver #timerwrapper #timers::before{
           content: ':';
         }
-        #screensaver.hidden {
+        #screensaver.hidden, #popup.hidden{
           display: none;
+        }
+        #popup {
+          --bg: rgba(159,3,7,0.8);
+          background-color: var(--bg);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 100;
+        }
+        #popup #message{
+          --bg: rgba(255,255,255,0.4);
+          padding: 3vmin;
+          background: var(--bg);
+          color: white;
+          border-radius: 3vmin;
+          min-width: 40vw;
+          max-width: 80vw;
+          font-weight: bold;
+          font-size: 3vmin;
+          text-align: center;
         }
         .button {
           cursor: pointer;
@@ -109,6 +123,8 @@
           height: 100%;
           display: flex;
           flex-direction: column;
+          transform: translateZ(0);
+          will-change: transform;
         }
         #playeroverlay {
           position: absolute;
@@ -119,6 +135,8 @@
         }
         #playeroverlay .bnitem{
           margin: 3vmin;
+        }
+        #playeroverlay.blured .bnitem{
           backdrop-filter: blur(0.9vmin);
           -webkit-backdrop-filter: blur(0.9vmin);
         }
@@ -171,18 +189,20 @@
           font-size: 15vmin;
           font-weight: bold;
           color: rgba(255,255,255,0.95);
+          /*color: #fff;*/
+          overflow: hidden;
         }
         #timerwrapper {
           display: flex;
           align-items: flex-start;
+          overflow: hidden;
         }
         #timers {
           font-size: 8vmin;
           font-weight: bold;
           color: #e3d25f;
-          color: rgba(255,255,255,0.4);
-          color: #e3d25f;
           margin-left: 1.5vmin;
+          overflow: hidden;
         }
         #playerprogresswrapper{
           margin-right: 3.5vmin;
@@ -231,7 +251,7 @@
         #genre{
           text-transform: lowercase;
           font-size: 4vmin;
-          height: 4vmin;
+          white-space: nowrap;
           font-weight: bold;
           margin-top: 1.0vmin;
           margin-right: 1.5vmin;
@@ -241,7 +261,7 @@
         #centerwrap {
           display: flex;
           flex: 1;
-          position: relative
+          position: relative;
         }
         #playerleft{
           display: flex;
@@ -304,6 +324,7 @@
           transform: translateX(-60vmin);
           -webkit-transform: translateX(-60vmin);
           display: flex;
+          overflow: hidden;
         }
         #playlist .hidden {
           display: none;
@@ -317,6 +338,8 @@
           -ms-overflow-style: none;
           scrollbar-width: none;
           box-shadow: inset -1.5vmin 0 2vmin -1vmin rgba(0,0,0,0.7);
+          transform: translateZ(0);
+          will-change: transform;
         }
         #playlistcontent::-webkit-scrollbar {
           display: none;
@@ -325,24 +348,6 @@
           width: 5vmin;
           background-color: transparent;
           cursor: pointer;
-        }
-        body.slide-in #playlist {
-          animation: slide-in 0.2s forwards;
-          -webkit-animation: slide-in 0.2s forwards;
-          z-index: 10;
-        }
-        body.slide-out #playlist {
-          animation: slide-out 0.2s forwards;
-          -webkit-animation: slide-out 0.2s forwards;
-          z-index: 8;
-        }
-        body.slide-in #player {
-          animation: player-in 0.2s forwards;
-          -webkit-animation: player-in 0.2s forwards;
-        }
-        body.slide-out #player {
-          animation: player-out 0.2s forwards;
-          -webkit-animation: player-out 0.2s forwards;
         }
         .plitem {
           height: 10vmin;
@@ -402,12 +407,15 @@
           display: flex;
           justify-content: center;
           align-items: center;
-          transform: translateY(24vmin);
-          -webkit-transform: translateY(36vmin);
-          backdrop-filter: blur(0.9vmin);
-          -webkit-backdrop-filter: blur(0.9vmin);
+          transform: translateY(36vmin) translateZ(0);
+          -webkit-transform: translateY(36vmin) translateZ(0);
           mask: linear-gradient(transparent, black 40%);
           -webkit-mask: linear-gradient(transparent, black 40%);
+          will-change: transform;
+        }
+        #bottomnav.blured{
+          backdrop-filter: blur(0.9vmin);
+          -webkit-backdrop-filter: blur(0.9vmin);
         }
         #bnsuffix {
           display: flex;
@@ -425,7 +433,7 @@
           fill: rgba(255,255,255,0.6);
           stroke: rgba(255,255,255,0.6);
           cursor: pointer;
-          background: rgba(0,0,0,0.5);
+          background: rgba(0,0,0,0.7);
           -webkit-tap-highlight-color: rgba(0,0,0,0);
         }
         div.bnitem.active svg{
@@ -441,65 +449,57 @@
           border-color: rgba(255,255,255,0.5);
           background: radial-gradient(rgba(255,255,255,0.3), rgba(255,255,255,0.1));
         }
-        #player.slide-up #bottomnav {
+        #bottomnav.slide-up {
           animation: slide-up 0.2s forwards;
           -webkit-animation: slide-up 0.2s forwards;
           z-index: 15;
         }
-        #player.slide-dn #bottomnav {
+        #bottomnav.slide-dn {
           animation: slide-dn 0.2s forwards;
           -webkit-animation: slide-dn 0.2s forwards;
           z-index: 3;
         }
+        body.slide-in #playlist {
+          animation: slide-in 0.2s forwards;
+          -webkit-animation: slide-in 0.2s forwards;
+          z-index: 10;
+        }
+        body.slide-out #playlist {
+          animation: slide-out 0.2s forwards;
+          -webkit-animation: slide-out 0.2s forwards;
+          z-index: 8;
+        }
+        body.slide-in #player {
+          animation: player-in 0.2s forwards;
+          -webkit-animation: player-in 0.2s forwards;
+        }
+        body.slide-out #player {
+          animation: player-out 0.2s forwards;
+          -webkit-animation: player-out 0.2s forwards;
+        }
+        #title div.scrolling, #song div.scrolling{
+          animation: scrolling calc(var(--duration)) cubic-bezier(.25,0,.75,1) calc(var(--delay));
+          -webkit-animation: scrolling calc(var(--duration)) cubic-bezier(.25,0,.75,1) calc(var(--delay));
+        }
+        @keyframes scrolling { 100% { transform: translateX(var(--scrollwidth)); } }
+        @-webkit-keyframes scrolling { 100% { transform: translateX(var(--scrollwidth)); } }
         
-        @keyframes slide-in {
-          100% { transform: translateX(0); }
-        }
-        @-webkit-keyframes slide-in {
-          100% { -webkit-transform: translateX(0); }
-        }
-        @keyframes slide-out {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-60vmin); }
-        }
-        @-webkit-keyframes slide-out {
-          0% { -webkit-transform: translateX(0); }
-          100% { -webkit-transform: translateX(-60vmin); }
-        }
+        @keyframes slide-in { 100% { transform: translateX(0); } }
+        @-webkit-keyframes slide-in { 100% { -webkit-transform: translateX(0); }  }
+        @keyframes slide-out { 0% { transform: translateX(0); } 100% { transform: translateX(-60vmin); } }
+        @-webkit-keyframes slide-out { 0% { -webkit-transform: translateX(0); } 100% { -webkit-transform: translateX(-60vmin); } }
         
-        @keyframes player-in {
-          100% { transform: translateX(60vmin); }
-        }
-        @-webkit-keyframes player-in {
-          100% { -webkit-transform: translateX(60vmin); }
-        }
-        @keyframes player-out {
-          0% { transform: translateX(60vmin); }
-          100% { transform: translateX(0); }
-        }
-        @-webkit-keyframes player-out {
-          0% { -webkit-transform: translateX(60vmin); }
-          100% { -webkit-transform: translateX(0); }
-        }
+        @keyframes player-in { 100% { transform: translateX(60vmin); } }
+        @-webkit-keyframes player-in { 100% { -webkit-transform: translateX(60vmin); } }
+        @keyframes player-out { 0% { transform: translateX(60vmin); } 100% { transform: translateX(0); } }
+        @-webkit-keyframes player-out { 0% { -webkit-transform: translateX(60vmin); } 100% { -webkit-transform: translateX(0); } }
         
-        @keyframes slide-up {
-          100% { transform: translateY(0); }
-        }
-        @-webkit-keyframes slide-up {
-          100% { -webkit-transform: translateY(0); }
-        }
-        @keyframes slide-dn {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(30vmin); }
-        }
-        @-webkit-keyframes slide-dn {
-          0% { -webkit-transform: translateY(0); }
-          100% { -webkit-transform: translateY(30vmin); }
-        }
+        @keyframes slide-up { 100% { transform: translateY(0); } }
+        @-webkit-keyframes slide-up { 100% { -webkit-transform: translateY(0); } }
+        @keyframes slide-dn { 0% { transform: translateY(0); } 100% { transform: translateY(30vmin); } }
+        @-webkit-keyframes slide-dn { 0% { -webkit-transform: translateY(0); } 100% { -webkit-transform: translateY(30vmin); } }
         
-        @media (orientation: landscape) {
-          
-        }
+        @media (orientation: landscape) { }
         @media (orientation: portrait) {
           #cover {
             position: absolute;
@@ -573,9 +573,10 @@
     </style>
 </head>
 <body>
-    <div id="backdropwrap" class="transform"><img id="backdrop" alt=" " src=""></div>
-    <div id="screensaver" class="hidden transform"></div>
-    <div id="player" class="transform">
+    <div id="backdropwrap"><img id="backdrop" alt=" " src=""></div>
+    <div id="screensaver" class="hidden"></div>
+    <div id="popup" class="hidden"><div id="message"></div></div>
+    <div id="player">
       <div id="title"><div></div></div>
       <div id="song"><div></div></div>
       <hr />
@@ -583,19 +584,21 @@
         <div id="playerleft">
           <div id="playstate" class="button" data-target="toggle"></div>
           <div id="genrewrap"><div id="genre"></div></div>
-          <div id="timerwrapper">
-            <div id="timer"></div>
-            <div id="timers"></div>
-          </div>
-          <div id="playerprogresswrapper" class="hidden">
-            <div id="playerprogressbg"><div id="playerprogress"></div></div>
-            <div id="playerprogressduration"></div>
-            <div id="playerprogresshandle" class="button" data-target="seek"></div>
+          <div id="playercontrols">
+            <div id="timerwrapper">
+              <div id="timer"></div>
+              <div id="timers"></div>
+            </div>
+            <div id="playerprogresswrapper" class="hidden">
+              <div id="playerprogressbg"><div id="playerprogress"></div></div>
+              <div id="playerprogressduration"></div>
+              <div id="playerprogresshandle" class="button" data-target="seek"></div>
+            </div>
           </div>
         </div>
         <div id="cover" class="button" data-target="navbartoggle">
           <img id="coverimg"  alt=" " src="" />
-          <div id="favorite" class="button active" data-target="favorite" data-item="">
+          <div id="favorite" class="button" data-target="favorite" data-item="">
             <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
               <path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" />
@@ -611,7 +614,27 @@
         </div>
         <div id="volumebg"><div id="volume"></div></div>
       </div>
-      <div id="bottomnav" class="transform">
+      
+      <div id="playeroverlay" class="blured hidden">
+        <div class="bnitem button" data-target="playlisttoggle">
+          <svg viewBox="0 0 24 24" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M18 6l-12 12" />
+            <path d="M6 6l12 12" />
+          </svg>
+        </div>
+        <div id="playlistmode" class="bnitem button" data-target="playlistmode">
+          <svg viewBox="0 0 24 24" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 7l-18 0" />
+            <path d="M18 10l3 -3l-3 -3" />
+            <path d="M6 20l-3 -3l3 -3" />
+            <path d="M3 17l18 0" />
+          </svg>
+        </div>
+      </div>
+    
+    
+      <div id="bottomnav" class="blured">
         <div class="bnitem button" id="bnbutton0" data-target="playlisttoggle">
           <svg viewBox="0 0 24 24" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -705,32 +728,17 @@
           </div>
         </div>
       </div><!-- bottomnav -->
-      <div id="playeroverlay" class="hidden">
-        <div class="bnitem button" data-target="playlisttoggle">
-          <svg viewBox="0 0 24 24" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-            <path d="M18 6l-12 12" />
-            <path d="M6 6l12 12" />
-          </svg>
-        </div>
-        <div id="playlistmode" class="bnitem button" data-target="playlistmode">
-          <svg viewBox="0 0 24 24" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 7l-18 0" />
-            <path d="M18 10l3 -3l-3 -3" />
-            <path d="M6 20l-3 -3l3 -3" />
-            <path d="M3 17l18 0" />
-          </svg>
-        </div>
-      </div>
     
     </div>
+    
     <div id="playlist">
       <div id="playlistcontent">
         <ul id="playlistlist" class="hovered"></ul>
         <ul id="playlists" class="hovered hidden"></ul>
       </div>
-      <div id="playlisthandle" class="button" data-target="playlisttoggle"></div>
+      <!--<div id="playlisthandle" class="button" data-target="playlisttoggle"></div>-->
     </div>
+    
     <script>
         var hostname = window.location.search!=""?window.location.search.substring(1):window.location.hostname;
         var port='6601';
@@ -748,37 +756,56 @@
             this._content = getId("playlistcontent");
             this._list = getId("playlistlist");
             this._listall = getId("playlists");
+            this._root = getId("playlist");
+            this._player = getId("player");
             this._dog = undefined;
             this._currentsong = null;
             this._isplaying = false;
             this._modeall = false;
+            this._visible = false;
           }
           visible() {
-            return document.body.hasClass('slide-in');
+            return this._visible;
+          }
+          _slideshow(){
+            this._player.style.willChange="transform";
+            this._root.style.willChange="transform";
+            document.body.classList.remove("slide-out");
+            document.body.classList.add("slide-in");
+          }
+          _slidehide(){
+            document.body.classList.remove("slide-in");
+            document.body.classList.add("slide-out");
+            //this._player.style.willChange="auto";
+            //this._root.style.willChange="auto";
           }
           show(fromkeyboard=false){
             if(!this.visible()){
-              document.body.classList.remove('slide-out');
-              document.body.classList.add('slide-in');
+              this._visible = true;
+              title.reset();
+              song.reset();
+              this._slideshow();
               if(fromkeyboard){
                 this._list.classList.remove('hovered');
                 this._list.classList.add('notitles');
                 this._listall.classList.remove('hovered');
                 this._listall.classList.add('notitles');
               }
+              navbar.hide(false, true);
               websocket.send(JSON.stringify({"key": "LOCK", "code": true, "magick": magick}));
               this.startdog();
-              navbar.hide();
               getId("playeroverlay").show();
               this.scrollto(this._currentsong);
             }
           }
           hide(silent=false){
             if(this.visible()){
-              document.body.classList.remove('slide-in');
-              document.body.classList.add('slide-out');
+              this._visible = false;
+              this._slidehide();
               this.stopdog();
               getId("playeroverlay").hide();
+              title.resume();
+              song.resume();
               if(this._modeall) this.changemode();
               if(!silent)
                 setTimeout(()=>{
@@ -868,6 +895,7 @@
             }
           }
           scrollto(id=null){
+            if(!this._visible) return;
             if(id==null) id=this._currentsong;
             this._currentsong = id;
             let plitem=getId('plitem'+id);
@@ -936,23 +964,28 @@
             this._count = getClass("button", this._parent).length;
             this._current = 3;
             this._dog = undefined;
+            this._visible = false;
           }
           visible() {
-            return this._player.hasClass('slide-up');
+            return this._visible;
           }
           show(){
             if(!this.visible()){
-              this._player.classList.remove('slide-dn');
-              this._player.classList.add('slide-up');
+              this._visible = true;
+              this._parent.style.willChange="transform";
+              this._parent.classList.remove("slide-dn");
+              this._parent.classList.add("slide-up");
               getId("bnbutton"+this._current).classList.add("active");
               websocket.send(JSON.stringify({"key": "LOCK", "code": true, "magick": magick}));
               this.startdog();
             }
           }
-          hide(silent=false){
+          hide(silent=false, force=false){
             if(this.visible()){
-              this._player.classList.remove('slide-up');
-              this._player.classList.add('slide-dn');
+              this._parent.classList.remove("slide-up");
+              this._parent.classList.add("slide-dn");
+              this._parent.style.willChange="auto";
+              this._visible = false;
               if(!silent)
                 setTimeout(()=>{
                   if(!playlist.visible()) websocket.send(JSON.stringify({"key": "LOCK", "code": false, "magick": magick}));
@@ -1030,7 +1063,7 @@
           constructor(){
             this._clock      = getId("timerwrapper");
             this._root       = getId("screensaver");
-            this._prevParent = getId("playerleft");
+            this._prevParent = getId("playercontrols");
             this._before     = progress.root();
             this._timer      = null;
             this._interval   = 5; //minutes
@@ -1043,13 +1076,20 @@
               this._root.classList.remove('hidden');
               playlist.hide();
               navbar.hide();
+              title.reset();
+              song.reset();
             }, this._interval*1000*60);
           }
           stop(){
             if(this._timer) clearTimeout(this._timer);
             this._timer      = null;
-            this._root.classList.add('hidden');
-            this._prevParent.insertBefore(this._clock, this._before);
+            
+            if(!this._root.classList.contains("hidden")){
+              this._root.classList.add('hidden');
+              this._prevParent.insertBefore(this._clock, this._before);
+              title.resume();
+              song.resume();
+            }
           }
           resume(event){
             this.stop()
@@ -1075,6 +1115,7 @@
             this._currenttime='';
             this._imghash = '';
             this._eltimers = getId('timers');
+            this._connected = false;
           }
           connect(){
             if(this._timer) clearTimeout(this._timer);
@@ -1087,13 +1128,20 @@
           }
           onopen(event){
             console.log('Connection opened');
+            this._connected = true;
+            popup.set('');
             if(this._host=='localhost') this.send(JSON.stringify({"localhost": magick}))
             this._errors=0;
           }
           onclose(event){
             this._errors++;
             console.log('Connection closed');
+            popup.set('Connection closed');
+            this._connected = false;
             this._timer=setTimeout(this.connect.bind(this), this._errors<this._fasterrors?2000:120000);
+          }
+          connected(){
+            return this._connected;
           }
           dataescape(data){
             let m=data.match(/{.+?:\s"(.+?)"}/);
@@ -1196,12 +1244,23 @@
             this._prevv = 0;
             this._prevd = 0;
           }
+          _pad(value) {
+            return ('0' + Math.floor(value)).slice(-2);
+          }
           set(value, duration, display=false) {
             value = parseFloat(value);
-            if(value!=this._prevv) this._progress.attr('style', 'width: '+value+'%;');
-            if(duration!=this._prevd) this._duration.textContent=duration;
+            if(value!=this._prevv) {
+              const pst = value+'%';
+              this._progress.style.width = pst;
+            }
+            if(duration && duration!=this._prevd) {
+              const d = new Date(duration);
+              this._duration.textContent=d.getUTCHours()==0?`${this._pad(d.getMinutes())}:${this._pad(d.getSeconds())}`
+                            :`${this._pad(d.getUTCHours())}:${this._pad(d.getMinutes())}:${this._pad(d.getSeconds())}`;
+              this._prevd=duration;
+            }
             this._prevv=value;
-            this._prevd=duration;
+            
             if(value==0 && duration=='') {
               this.hide();
               return;
@@ -1222,9 +1281,6 @@
           }
           seek(event){
             let payload=((100*(unify(event).clientX-getId("centerwrap").offsetLeft)/this._handle.clientWidth) | 0);
-            console.log(unify(event).clientX);
-            console.log();
-            console.log(this._handle.clientWidth);
             this._progress.attr('style', 'width: '+payload+'%;');
             return payload;
           }
@@ -1240,8 +1296,8 @@
             this._locked = false;
             this._root.addEventListener("mousedown", this._lock.bind(this), false);
             this._root.addEventListener("touchstart", this._lock.bind(this), false);
-            this._root.addEventListener("mousemove", this._move.bind(this), false);
-            this._root.addEventListener("touchmove", this._move.bind(this), false);
+            //this._root.addEventListener("mousemove", this._move.bind(this), false);
+            //this._root.addEventListener("touchmove", this._move.bind(this), false);
             this._root.addEventListener("mousewheel", this._whell.bind(this), false);
             this._timer = undefined;
           }
@@ -1269,6 +1325,8 @@
           _lock(event){
             event = event || window.event;
             event.preventDefault();
+            this._root.addEventListener("mousemove", this._move.bind(this), false);
+            this._root.addEventListener("touchmove", this._move.bind(this), false);
             document.addEventListener("mouseup", this._unlock.bind(this), { once: true, capture: true });
             document.addEventListener("touchend", this._unlock.bind(this), { once: true, capture: true });
             this._locked = true;
@@ -1278,6 +1336,8 @@
           _unlock(event){
             event = event || window.event;
             event.preventDefault();
+            this._root.removeEventListener("mousemove", this._move.bind(this), false);
+            this._root.removeEventListener("touchmove", this._move.bind(this), false);
             if(event.constructor.name=='MouseEvent' && event.button!==0) return;
             if(this._changed()) this._send();
             this._locked = false;
@@ -1306,20 +1366,28 @@
             this._stop   = false;
             document.addEventListener('mousedown', this._lock.bind(this), false);
             document.addEventListener('touchstart', this._lock.bind(this), false);
-            document.addEventListener('mousemove', this._move.bind(this), false);
-            document.addEventListener('touchmove', this._move.bind(this), false);
+            this._mousemove = null;
+            this._touchmove = null;
+            this._mouseup = null;
+            this._touchend = null;
+            //document.addEventListener('mousemove', this._move.bind(this), false);
+            //document.addEventListener('touchmove', this._move.bind(this), false);
           }
           _lock(event){
             event = event || window.event;
             //event.preventDefault();
             this._touchX = unify(event).clientX;
             this._touchY = unify(event).clientY;
+            document.addEventListener('mousemove', this._move.bind(this), false);
+            document.addEventListener('touchmove', this._move.bind(this), false);
             document.addEventListener("mouseup", this._unlock.bind(this), { once: true, capture: true });
             document.addEventListener("touchend", this._unlock.bind(this), { once: true, capture: true });
           }
           _unlock(event){
             event = event || window.event;
             //event.preventDefault();
+            document.removeEventListener('mousemove', this._move.bind(this), false);
+            document.removeEventListener('touchmove', this._move.bind(this), false);
             if(event && this._stop){
               event = event || window.event;
               event.stopPropagation();
@@ -1354,97 +1422,90 @@
         } /* end of Swiper */
         /*****************************************************************/
         class Scroller {
-          constructor(slave, step = 5, repeatafter=0){
+          constructor(slave, speed = 5, repeatafter=0, enabled=true){
             this._child  = slave.children[0];
-            this._step = slave.offsetWidth/100;
-            this._step = step;
+            this._width = slave.offsetWidth;
+            this._speed = speed;
             this._repeatafter = repeatafter;
-            this.RAF = null;
-            this.STO = null;
+            this._animation = null;
+            this._text = '';
+            this._ready = false;
+            this._enabled = enabled;
           }
           text(val){
+            if(this._text==val) return;
+            this._ready = false;
+            this._text=val;
             this._child.textContent = val;
             this._scrollwidth = 0;
             this._offset = 0;
-            this._reset();
-            
-            if(this._child.scrollWidth-this._child.offsetWidth>0){
+            this.reset();
+            if(this._child.scrollWidth-this._child.offsetWidth>0 && this._enabled){
               let text = this._child.textContent;
               this._child.innerHTML = `${text}&nbsp;&bull;&nbsp;`;
               this._scrollwidth = this._child.scrollWidth;
-              this._child.innerHTML += text;
-              this.RAF=requestAnimationFrame(this._scrolltext.bind(this));
+              this._child.innerHTML += this._child.innerHTML;
+              this._duration = this._scrollwidth/this._width*this._speed*700;
+              this._ready = true;
+              this._child.style.setProperty('--scrollwidth', -this._scrollwidth+"px");
+              this._child.style.setProperty('--delay', this._repeatafter+'s');
+              this._child.style.setProperty('--duration', this._duration+'ms');
+              this._child.classList.add("scrolling");
+              this._animation = setTimeout(()=>{ this._loop(); }, this._repeatafter*1000+this._duration+2000);
             }
           }
-          _dorepeat(){
-            this.RAF=requestAnimationFrame(this._scrolltext.bind(this));
+          _loop(){
+            this.reset();
+            this._child.classList.add("scrolling");
+            this._animation = setTimeout(()=>{ this._loop(); }, this._repeatafter*1000+this._duration);
           }
-          _scrolltext(timeStamp){
-            this._offset -= this._scrollwidth+this._offset<this._step*5?1:this._step;
-            this._child.attr('style', `transform: translate3d(${this._offset}px,0,0);`);
-            if(this._scrollwidth+this._offset<=0 || screensaver.visible()) {
-              this._stop();
-              return;
-            }
-            this.RAF=requestAnimationFrame(this._scrolltext.bind(this));
+          reset(){
+            if(this._animation) clearTimeout(this._animation);
+            this._child.classList.remove("scrolling");
+            void this._child.offsetWidth;
           }
-          _reset(){
-            if(this.RAF) cancelAnimationFrame(this.RAF);
-            if(this.STO) clearTimeout(this.STO);
-            this._child.attr('style', 'transform: translateX(0);');
-            this._offset = 0;
-            this.RAF = null;
-            this.STO = null;
-          }
-          _stop(){
-            this._reset();
-            if(this._child.scrollWidth-this._child.offsetWidth>0 && this._repeatafter>0) this.STO = setTimeout(this._dorepeat.bind(this), this._repeatafter*1000);
+          resume(){
+            if(this._ready) this._loop();
           }
         } /* end of Scroller */
         /*****************************************************************/
         class Timers {
           constructor(){
             this._time = getId("timer");
+            this._time.textContent=' ';
             this._times = getId("timers");
+            this._times.textContent=' ';
             this._ms = 0;
             this._elapsed = 0;
             this._duration = 0;
             this._local = false;
             this.timer = setInterval(this._process.bind(this), 1000);
+            this._currenttime = '';
+            this._part1='';
+            this._part2='';
           }
-          _mstotime(s) {
-            function pad(n, z) {
-              z = z || 2;
-              return ('00' + n).slice(-z);
-            }
-            var ms = s % 1000;
-            s = (s - ms) / 1000;
-            var secs = s % 60;
-            s = (s - secs) / 60;
-            var mins = s % 60;
-            var hrs = (s - mins) / 60;
-            //return pad(hrs) + ':' + pad(mins) + ':' + pad(secs) + '.' + pad(ms, 3);
-            return pad(mins) + ':' + pad(secs);
+          _pad(value) {
+            return ('0' + Math.floor(value)).slice(-2);
+          }
+          _parts(){
+            const isprogress = this._local && playlist.isplaying();
+            const d = new Date(isprogress?this._elapsed:this._ms);
+            const uh = d.getUTCHours()
+            this._part1=!isprogress?`${this._pad(d.getHours())}:${this._pad(d.getMinutes())}`:uh==0?`${this._pad(d.getMinutes())}:${this._pad(d.getSeconds())}`:`${uh}:${this._pad(d.getMinutes())}`;
+            this._part2=!isprogress?this._pad(d.getSeconds()):uh==0?' ':this._pad(d.getSeconds());
           }
           _process(){
+            if(!websocket.connected()) return;
             this._ms+=1000;
-            const d = new Date(this._ms);
-            const dd = [d.getHours(), d.getMinutes()].map((a)=>(a < 10 ? '0' + a : a));
-            let ds = d.getSeconds();
-            ds=ds<10?'0'+ds:ds;
-            if(this._local && playlist.isplaying()){
-              this._time.textContent = this._mstotime(this._elapsed);
-              this._times.textContent = '';
-            }else{
-              this._time.textContent = dd.join(':');
-              this._times.textContent = ds;
-            }
+            this._parts();
+            this._elapsed+=1000;
+            this._time.firstChild.data = this._part1;
+            this._times.firstChild.data = this._part2;
             this._progress();
           }
           _progress(){
             if(this._local && playlist.isplaying()){
-              progress.set(this._elapsed*100/this._duration, this._mstotime(this._duration), true);
-              this._elapsed+=1000;
+              progress.set(this._elapsed*100/this._duration, this._duration, true, true);
             }else{
               progress.set(0, '');
             }
@@ -1456,18 +1517,41 @@
             this._local = local;
             this._process();
           }
+        } /* end of Timers */
+        /*****************************************************************/
+        class Popup {
+          constructor(){
+            this._popup = getId("popup");
+            this._message = getId("message");
+          }
+          set(text){
+            if(text!=''){
+              this._message.textContent=text;
+              this.show();
+            }else{
+              this.hide();
+              this._message.textContent=text;
+            }
+          }
+          show(){
+            this._popup.classList.remove("hidden");
+          }
+          hide(){
+            this._popup.classList.add("hidden");
+          }
         }
-        var title = new Scroller(getId("title"), 5, 10);
-        var song  = new Scroller(getId("song"), 3, 5);
-        var swiper = new Swiper();
-        var volbar = new Volbar();
-        var progress = new Progress();
+        var title       = new Scroller(getId("title"), 5, 10, true); /* element, duration, delay, enabled */
+        var song        = new Scroller(getId("song"), 5, 8, true); /* element, duration, delay, enabled */
+        var swiper      = new Swiper();
+        var volbar      = new Volbar();
+        var progress    = new Progress();
         var screensaver = new Screensaver();
-        var playlist = new Playlist();
-        var navbar    = new Navbar();
-        var websocket = new wsClient(hostname, port);
-        var timers = new Timers();
-
+        var playlist    = new Playlist();
+        var navbar      = new Navbar();
+        var websocket   = new wsClient(hostname, port);
+        var timers      = new Timers();
+        var popup       = new Popup();
+        
         var lockControls = false; // wait for moode feedback
         function controlsLock(){
           lockControls=true;
@@ -1513,7 +1597,7 @@
 
         document.body.addEventListener("keyup", (event)=>{
           event = event || window.event;
-          console.log(`{event='keyup', key='${event.key}', code='${event.code}'}`);
+          //console.log(`{event='keyup', key='${event.key}', code='${event.code}'}`);
           screensaver.resume(null);
           if(KEY_HOME.includes(event.code)){
             if(!navbar.visible() && playlist.visible()){
@@ -1521,7 +1605,7 @@
               return false;
             }
             if(navbar.visible() && !playlist.visible()){
-              navbar.hide();
+              navbar.hide(false, true);
               playlist.show(true);
               return false;
             }
@@ -1557,7 +1641,7 @@
             if(cmd=="toggle") navbar.hide();
             let payload=button.dataset.payload;
             payload=payload?payload:'';
-            console.log(`{event='mouseup', target='${button.dataset.target}', payload='${payload}'}`);
+            //console.log(`{event='mouseup', target='${button.dataset.target}', payload='${payload}'}`);
             if(cmd=="playlisttoggle"){
               playlist.toggle();
               event.stopPropagation();
