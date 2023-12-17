@@ -42,6 +42,12 @@
           padding: 0;
           margin: 0;
         }
+        .hidden{
+          display: none!important;
+        }
+        .invisible{
+          visibility: hidden;
+        }
         #backdropwrap, #screensaver, #popup{
           position: absolute;
           top: 0; right: 0; bottom: 0; left: 0;
@@ -70,9 +76,14 @@
         }
         #screensaver #timerwrapper {
           position: absolute;
-          left: 50%;
-          bottom: 17.5vmin;
-          transform: translateX(-50%);
+          left: 0;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          justify-content: center;
+          align-items: center;
+          animation: screenclock 120s alternate ease-in-out infinite;
+          -webkit-animation: screenclock 120s alternate ease-in-out infinite;
         }
         #screensaver #timerwrapper #timer {
           font-size: 25vmin;
@@ -86,11 +97,8 @@
         #screensaver #timerwrapper #timers::before{
           content: ':';
         }
-        #screensaver.hidden, #popup.hidden{
-          display: none;
-        }
         #popup {
-          --bg: rgba(159,3,7,0.8);
+          /*--bg: rgba(159,3,7,0.8);*/
           background-color: var(--bg);
           display: flex;
           justify-content: center;
@@ -99,7 +107,7 @@
         }
         #popup #message{
           --bg: rgba(255,255,255,0.4);
-          padding: 3vmin;
+          padding: 4vmin 10vmin;
           background: var(--bg);
           color: white;
           border-radius: 3vmin;
@@ -108,6 +116,16 @@
           font-weight: bold;
           font-size: 3vmin;
           text-align: center;
+        }
+        #popup #spinner {
+          width: 8vmin;
+          height: 8vmin;
+          border: 1vmin solid #e3d25f;
+          border-bottom-color: transparent;
+          border-radius: 50%;
+          display: inline-block;
+          box-sizing: border-box;
+          animation: spinner 1s linear infinite;
         }
         .button {
           cursor: pointer;
@@ -196,6 +214,7 @@
           display: flex;
           align-items: flex-start;
           overflow: hidden;
+          min-width: fit-content;
         }
         #timers {
           font-size: 8vmin;
@@ -208,9 +227,6 @@
           margin-right: 3.5vmin;
           position: relative;
           padding-bottom: 1.5vmin;
-        }
-        #playerprogresswrapper.hidden{
-          visibility: hidden;
         }
         #playerprogressbg{
           background: rgba(0,0,0,0.2);
@@ -247,6 +263,8 @@
         }
         #genrewrap{
           flex: 1;
+          overflow: hidden;
+          margin-right: 1.5vmin;
         }
         #genre{
           text-transform: lowercase;
@@ -254,9 +272,9 @@
           white-space: nowrap;
           font-weight: bold;
           margin-top: 1.0vmin;
-          margin-right: 1.5vmin;
+          
           color: #e3d25f;
-          overflow: hidden;
+          
         }
         #centerwrap {
           display: flex;
@@ -267,10 +285,20 @@
           display: flex;
           flex-direction: column;
           flex: 1;
+          overflow: hidden;
         }
+        #playerright{
+          position: relative;
+          align-items: center;
+          justify-content: center;
+          display: flex;
+        }
+        #playercontrols{ }
         #cover {
           width: 54vmin;
           height: 54vmin;
+          min-width: 54vmin;
+          min-height: 54vmin;
           background-position: center center;
           background-repeat: no-repeat;
           background-size: cover;
@@ -325,9 +353,6 @@
           -webkit-transform: translateX(-60vmin);
           display: flex;
           overflow: hidden;
-        }
-        #playlist .hidden {
-          display: none;
         }
         #playlistcontent {
           width: 60vmin;
@@ -421,9 +446,6 @@
           display: flex;
           align-items: center;
         }
-        #bottomnav .hidden, #playeroverlay.hidden {
-          display: none;
-        }
         div.bnitem {
           width: 15.5vmin; height: 15.5vmin;
           padding: 2vmin;
@@ -477,9 +499,9 @@
           animation: player-out 0.2s forwards;
           -webkit-animation: player-out 0.2s forwards;
         }
-        #title div.scrolling, #song div.scrolling{
-          animation: scrolling calc(var(--duration)) cubic-bezier(.25,0,.75,1) calc(var(--delay));
-          -webkit-animation: scrolling calc(var(--duration)) cubic-bezier(.25,0,.75,1) calc(var(--delay));
+        #title div.scrolling, #song div.scrolling, #genrewrap div.scrolling{
+          animation: scrolling var(--duration) cubic-bezier(.25,0,.75,1) var(--delay);
+          -webkit-animation: scrolling var(--duration) cubic-bezier(.25,0,.75,1) var(--delay);
         }
         @keyframes scrolling { 100% { transform: translateX(var(--scrollwidth)); } }
         @-webkit-keyframes scrolling { 100% { transform: translateX(var(--scrollwidth)); } }
@@ -499,27 +521,58 @@
         @keyframes slide-dn { 0% { transform: translateY(0); } 100% { transform: translateY(30vmin); } }
         @-webkit-keyframes slide-dn { 0% { -webkit-transform: translateY(0); } 100% { -webkit-transform: translateY(30vmin); } }
         
+        @keyframes screenclock { 0% { transform: translateY(25%); } 100% { transform: translateY(-25%); } }
+        @-webkit-keyframes screenclock { 0% { -webkit-transform: translateY(25%); } 100% { -webkit-transform: translateY(-25%); } }
+        
+        @keyframes spinner { 0% { transform: rotate(0deg);  } 100% { transform: rotate(360deg); } }
+        @-webkit-keyframes spinner { 0% { transform: rotate(0deg);  } 100% { transform: rotate(360deg); } }
+        
         @media (orientation: landscape) { }
         @media (orientation: portrait) {
-          #cover {
-            position: absolute;
-            left: 50%;
+          #playerleft{
+            flex: none;
+          }
+          #playerright{
+            flex: 1;
+            overflow: hidden;
+            margin-bottom: 3vmin;
+            justify-content: unset;
+          }
+          #cover{
+            width: 90vw;
+            height: 90vw;
             top: 50%;
-            transform: translate(-50%, -50%);
-            margin-top: 1vmin;
-          }
-          #playerleft, #footer {
+            transform: translateY(-50%);
+            -webkit-transform: translateY(-50%);
+            min-width: unset;
+            min-height: unset;
             position: absolute;
-            right: 0;
-            left: 0;
-            z-index: 2;
           }
-          #footer {
-            right: 5vmin; left: 5vmin; bottom: 5vmin;
+          #favorite{
+            bottom: unset;
+            top: 50%;
+            transform: translateY(-50%);
+            -webkit-transform: translateY(-50%);
+            padding: 2vmax;
+            width: 10vmax;
+            height: 10vmax;
+          }
+          #title{
+            min-height: 9.5vmin;
+          }
+          #song{
+            min-height: 7.5vmin;
+          }
+          #centerwrap {
+            flex-direction: column;
+          }
+          #genrewrap {
+            margin: 0;
           }
           #genre {
             text-align: center;
             margin-top: 2vmin;
+            margin: 0;
           }
           #playerprogresswrapper{
             margin-right: 0;
@@ -531,13 +584,17 @@
           #timers {
             display: none;
           }
+          #screensaver #timerwrapper #timers {
+            font-size: 25vmin;
+            color: #fff;
+            margin-left: 0;
+          }
+          #screensaver #timerwrapper #timers::before{
+            content: ':';
+          }
           #timerwrapper {
             position: absolute;
             top: 0; right: 0;
-          }
-          #screensaver #timerwrapper {
-            top: auto; right: auto;
-            bottom: 27.5vmin;
           }
           #screensaver #timer {
             line-height: 25vmin;
@@ -548,7 +605,7 @@
         }
         @media (min-width: 400px) and (max-width: 1500px) and (orientation: landscape){
           #timer {
-              font-size: 19vmin;
+              font-size: 17vmin;
             }
             #timers {
               font-size: 9vmin;
@@ -575,8 +632,8 @@
 <body>
     <div id="backdropwrap"><img id="backdrop" alt=" " src=""></div>
     <div id="screensaver" class="hidden"></div>
-    <div id="popup" class="hidden"><div id="message"></div></div>
-    <div id="player">
+    <div id="popup"><div id="message" class="hidden"></div><div id="spinner"></div></div>
+    <div id="player" class="hidden">
       <div id="title"><div></div></div>
       <div id="song"><div></div></div>
       <hr />
@@ -589,20 +646,22 @@
               <div id="timer"></div>
               <div id="timers"></div>
             </div>
-            <div id="playerprogresswrapper" class="hidden">
+            <div id="playerprogresswrapper" class="invisible">
               <div id="playerprogressbg"><div id="playerprogress"></div></div>
               <div id="playerprogressduration"></div>
               <div id="playerprogresshandle" class="button" data-target="seek"></div>
             </div>
           </div>
         </div>
-        <div id="cover" class="button" data-target="navbartoggle">
-          <img id="coverimg"  alt=" " src="" />
-          <div id="favorite" class="button" data-target="favorite" data-item="">
-            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-              <path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" />
-            </svg>
+        <div id="playerright">
+          <div id="cover" class="button" data-target="navbartoggle">
+            <img id="coverimg"  alt=" " src="" />
+            <div id="favorite" class="button" data-target="favorite" data-item="">
+              <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
@@ -866,13 +925,13 @@
           }
           changemode(){
             if(this._list.classList.contains("hidden")) {
-              this._list.classList.remove("hidden");
-              this._listall.classList.add("hidden");
+              this._list.show();
+              this._listall.hide();
               this.scrollto();
               this._modeall=false;
             }else{
-              this._list.classList.add("hidden");
-              this._listall.classList.remove("hidden");
+              this._list.hide();
+              this._listall.show();
               this._modeall=true;
             }
           }
@@ -1073,7 +1132,7 @@
             if(this._timer) clearTimeout(this._timer);
             this._timer = setTimeout(() => {
               this._root.appendChild(this._clock);
-              this._root.classList.remove('hidden');
+              this._root.show();
               playlist.hide();
               navbar.hide();
               title.reset();
@@ -1085,7 +1144,7 @@
             this._timer      = null;
             
             if(!this._root.classList.contains("hidden")){
-              this._root.classList.add('hidden');
+              this._root.hide();
               this._prevParent.insertBefore(this._clock, this._before);
               title.resume();
               song.resume();
@@ -1129,6 +1188,7 @@
           onopen(event){
             console.log('Connection opened');
             this._connected = true;
+            getId("player").show();
             popup.set('');
             if(this._host=='localhost') this.send(JSON.stringify({"localhost": magick}))
             this._errors=0;
@@ -1136,7 +1196,8 @@
           onclose(event){
             this._errors++;
             console.log('Connection closed');
-            popup.set('Connection closed');
+            if(this._errors<3) popup.set('spinner');
+            else popup.set('websocket lost connection :`(<br /> reconnecting..');
             this._connected = false;
             this._timer=setTimeout(this.connect.bind(this), this._errors<this._fasterrors?2000:120000);
           }
@@ -1159,54 +1220,63 @@
             var data = JSON.parse(event.data);
             if(!data) return;
             if("displayname" in data){
-                title.text(data.displayname);
+                title.text(data.displayname==''?'MoOde audio':data.displayname);
                 if(data.format==''){
                   getId("bitrate").textContent=data.bitrate!=''?data.bitrate+' kbps':'';
                 }else{
                   getId("bitrate").textContent=data.bitrate!=''?data.bitrate+' '+data.format:'';
                 }
-                getId("genre").textContent=data.genre;
+                //getId("genre").textContent=data.genre;
+                genre.text(data.genre);
                 if(this._imghash!=data.imghash){
                   this._imghash=data.imghash;
-                  getId("coverimg").src = `http://${hostname}/${data.coverurl}`;
+                  let coverimage = new Image;
+                  coverimage.onload = function () {
+                    getId("coverimg").src = this.src;
+                    getId("backdrop").src = this.src;
+                  }
+                  coverimage.onerror = function() {
+                    console.log(`error loading coverimg from http://${hostname}/${data.coverurl}`);
+                  }
+                  coverimage.src = `http://${hostname}/${data.coverurl}`;
                 }
                 song.text((data.title=='')?'Streaming source':data.title);
-                getId("playstate").textContent = data.state;
+                getId("playstate").textContent = data.state!=''?data.state:'STOP';
                 if(typeof volbar!='undefined') volbar.set(data.volume);
                 getId("ipaddr").textContent = data.ip;
                 playlist.current(data.id);
                 lockControls = false;
                 if(playlist.isplaying(data.state=='play')){
                   screensaver.resume(null);
-                  getId("navplay").classList.add("hidden");
-                  getId("navpause").classList.remove("hidden");
+                  getId("navplay").hide();
+                  getId("navpause").show();
                 }else{
                   screensaver.start();
-                  getId("navpause").classList.add("hidden");
-                  getId("navplay").classList.remove("hidden");
+                  getId("navpause").hide();
+                  getId("navplay").show();
                 }
                 if(data.mute){
-                  getId("bnunmuted").classList.add("hidden");
-                  getId("bnmuted").classList.remove("hidden");
+                  getId("bnunmuted").hide();
+                  getId("bnmuted").show();
                 }else{
-                  getId("bnmuted").classList.add("hidden");
-                  getId("bnunmuted").classList.remove("hidden");
+                  getId("bnmuted").hide();
+                  getId("bnunmuted").show();
                 }
                 if(data.random){
-                  getId("bnnotrandom").classList.add("hidden");
-                  getId("bnrandom").classList.remove("hidden");
+                  getId("bnnotrandom").hide();
+                  getId("bnrandom").show();
                 }else{
-                  getId("bnrandom").classList.add("hidden");
-                  getId("bnnotrandom").classList.remove("hidden");
+                  getId("bnrandom").hide();
+                  getId("bnnotrandom").show();
                 }
-                getId("bnrepeat").classList.add("hidden");
-                getId("bnnorepeat").classList.add("hidden");
-                getId("bnrepeatsingle").classList.add("hidden");
-                getId("bnsingle").classList.add("hidden");
-                if(data.repeat && data.single) getId("bnrepeatsingle").classList.remove("hidden");
-                if(data.repeat && !data.single) getId("bnrepeat").classList.remove("hidden");
-                if(!data.repeat && data.single) getId("bnsingle").classList.remove("hidden");
-                if(!data.repeat && !data.single) getId("bnnorepeat").classList.remove("hidden");
+                getId("bnrepeat").hide();
+                getId("bnnorepeat").hide();
+                getId("bnrepeatsingle").hide();
+                getId("bnsingle").hide();
+                if(data.repeat && data.single) getId("bnrepeatsingle").show();
+                if(data.repeat && !data.single) getId("bnrepeat").show();
+                if(!data.repeat && data.single) getId("bnsingle").show();
+                if(!data.repeat && !data.single) getId("bnnorepeat").show();
                 timers.sync(data.serverms, data.elapsed, data.duration, data.local);
                 getId("favorite").dataset.item=data.file;
                 if(data.favorite) getId("favorite").classList.add("active")
@@ -1228,6 +1298,10 @@
                 playlist.hide(true);
                 navbar.hide(true);
               }
+            }
+            if("newfavorite" in data){
+              if(data.newfavorite) getId("favorite").classList.add("active");
+              else getId("favorite").classList.remove("active");
             }
           }//onmessage
           send(data){
@@ -1271,13 +1345,13 @@
             return this._root;
           }
           visible(){
-            return !this._root.hasClass('hidden');
+            return !this._root.hasClass('invisible');
           }
           hide(){
-            if(this.visible()) this._root.classList.add('hidden');
+            if(this.visible()) this._root.classList.add('invisible');
           }
           show(){
-            if(!this.visible()) this._root.classList.remove('hidden');
+            if(!this.visible()) this._root.classList.remove('invisible');
           }
           seek(event){
             let payload=((100*(unify(event).clientX-getId("centerwrap").offsetLeft)/this._handle.clientWidth) | 0);
@@ -1374,6 +1448,7 @@
             //document.addEventListener('touchmove', this._move.bind(this), false);
           }
           _lock(event){
+            if(popup.visible()) return;
             event = event || window.event;
             //event.preventDefault();
             this._touchX = unify(event).clientX;
@@ -1424,7 +1499,7 @@
         class Scroller {
           constructor(slave, speed = 5, repeatafter=0, enabled=true){
             this._child  = slave.children[0];
-            this._width = slave.offsetWidth;
+            this._slave = slave;
             this._speed = speed;
             this._repeatafter = repeatafter;
             this._animation = null;
@@ -1439,6 +1514,7 @@
             this._child.textContent = val;
             this._scrollwidth = 0;
             this._offset = 0;
+            this._width = this._slave.offsetWidth;
             this.reset();
             if(this._child.scrollWidth-this._child.offsetWidth>0 && this._enabled){
               let text = this._child.textContent;
@@ -1523,25 +1599,49 @@
           constructor(){
             this._popup = getId("popup");
             this._message = getId("message");
+            this._spinner = getId("spinner");
+            this._visible = false;
+            this._currenttext = undefined;
           }
-          set(text){
+          set(text, bg="rgba(159,3,7,0.8)"){
+            /*--bg: rgba(159,3,7,0.8);*/
+            if(this._currenttext==text) return;
+            this._currenttext=text;
             if(text!=''){
-              this._message.textContent=text;
+              if(text=='spinner'){
+                this._popup.style.setProperty('--bg', 'transparent');
+                this._message.hide();
+                this._spinner.show();
+              }else{
+                this._popup.style.setProperty('--bg', bg);
+                this._message.show();
+                this._spinner.hide();
+                this._message.innerHTML=text;
+              }
               this.show();
             }else{
               this.hide();
-              this._message.textContent=text;
+              this._currenttext = undefined;
+              this._message.textContent='';
             }
           }
           show(){
-            this._popup.classList.remove("hidden");
+            this._visible = true;
+            this._popup.show();
           }
           hide(){
-            this._popup.classList.add("hidden");
+            this._popup.hide();
+            this._spinner.hide();
+            this._message.hide();
+            this._visible = false;
+          }
+          visible(){
+            return this._visible;
           }
         }
-        var title       = new Scroller(getId("title"), 5, 10, true); /* element, duration, delay, enabled */
-        var song        = new Scroller(getId("song"), 5, 8, true); /* element, duration, delay, enabled */
+        var title       = new Scroller(getId("title"), 5, 10, true);      /* element, duration, delay, enabled */
+        var song        = new Scroller(getId("song"), 5, 8, true);        /* element, duration, delay, enabled */
+        var genre       = new Scroller(getId("genrewrap"), 5, 15, true);  /* element, duration, delay, enabled */
         var swiper      = new Swiper();
         var volbar      = new Volbar();
         var progress    = new Progress();
@@ -1566,10 +1666,10 @@
         HTMLElement.prototype.active = function () {
           return this.classList.contains("active");
         }
-        HTMLElement.prototype.show = function () {
+        Object.prototype.show = function () {
           this.classList.remove("hidden");
         }
-        HTMLElement.prototype.hide = function () {
+        Object.prototype.hide = function () {
           this.classList.add("hidden");
         }
         HTMLElement.prototype.attr = function (name, value="") {
@@ -1596,6 +1696,7 @@
         }
 
         document.body.addEventListener("keyup", (event)=>{
+          if(popup.visible()) return;
           event = event || window.event;
           //console.log(`{event='keyup', key='${event.key}', code='${event.code}'}`);
           screensaver.resume(null);
@@ -1628,6 +1729,7 @@
         classEach("button", document, (button, i)=>{
           button.addEventListener("mouseup", (event)=>{
             if(event.button!==0) return;
+            if(popup.visible()) return;
             screensaver.resume(null);
             let cmd=button.dataset.target;
             
@@ -1635,7 +1737,6 @@
               event.stopPropagation();
               button.classList.toggle("active");
               websocket.send(JSON.stringify({"cmd": "favorite", 'payload': button.dataset.item, 'action': button.classList.contains('active')?'add':'remove'}));
-              //console.log(button.dataset.item);
               return;
             }
             if(cmd=="toggle") navbar.hide();
@@ -1666,9 +1767,6 @@
             event.stopPropagation();
           }, false);
         });
-        getId("coverimg").onload = function(){
-          getId("backdrop").src = this.src;
-        }
     </script>
 </body>
 </html>

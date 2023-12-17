@@ -112,6 +112,16 @@ KEY_RIGHT    1  echo next  > /tmp/mfpipe
 ```
 
 ## 4. history
+#### v0.0.553 [2023.12.17]
+- STOP instead of PAUSE for internet radio
+- screen saver clock animation
+- handling error loading album cover image
+- handling websocket connection errors
+- some fluctuations on the layout
+- fixed reconnection when rebooting the system
+- broadcast message when favorites are changed
+- scroll long genre line
+
 #### v0.0.501 [2023.12.15]
 - optimization, refactoring
 - bugs fixes

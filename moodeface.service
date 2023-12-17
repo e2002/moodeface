@@ -1,7 +1,6 @@
 [Unit]
 Description=moOde fAce service
-After=network.target
-After=mpd.service
+After=network-online.target mpd.service
 
 [Service]
 ExecStart=/opt/moodeface/moodeface -r
