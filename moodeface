@@ -46,7 +46,7 @@ LOGLEVEL  = logging.INFO
 MPD_PLAYLIST_ROOT = '/var/lib/mpd/playlists/'
 
 APPNAME = "moOde fAce"
-VERSION = "0.0.553"
+VERSION = "0.0.559"
 
 class mpdPlayer:
     

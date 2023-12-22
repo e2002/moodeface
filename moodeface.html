@@ -576,6 +576,16 @@
           }
           #playerprogresswrapper{
             margin-right: 0;
+            display: flex;
+            align-items: flex-end;
+          }
+          #playerprogressbg{
+            flex: 1;
+          }
+          #playerprogressduration {
+            position: relative;
+            padding-bottom:0;
+            margin-left: 1vmin;
           }
           #timer {
             font-size: 10vmin;
@@ -1332,6 +1342,7 @@
               this._duration.textContent=d.getUTCHours()==0?`${this._pad(d.getMinutes())}:${this._pad(d.getSeconds())}`
                             :`${this._pad(d.getUTCHours())}:${this._pad(d.getMinutes())}:${this._pad(d.getSeconds())}`;
               this._prevd=duration;
+              this._handle.style.width = getId("playerprogressbg").clientWidth+"px";
             }
             this._prevv=value;
             

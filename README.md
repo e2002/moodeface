@@ -112,6 +112,9 @@ KEY_RIGHT    1  echo next  > /tmp/mfpipe
 ```
 
 ## 4. history
+#### v0.0.559 [2023.12.21]
+- fixed a bug in displaying playback progress in portrait mode
+
 #### v0.0.553 [2023.12.17]
 - STOP instead of PAUSE for internet radio
 - screen saver clock animation
