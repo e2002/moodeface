@@ -216,6 +216,9 @@
           overflow: hidden;
           min-width: fit-content;
         }
+        #timerwrapper.progress{
+          padding-bottom: 2vmin;
+        }
         #timers {
           font-size: 8vmin;
           font-weight: bold;
@@ -264,7 +267,7 @@
         #genrewrap{
           flex: 1;
           overflow: hidden;
-          margin-right: 1.5vmin;
+          /*margin-right: 1.5vmin;*/
         }
         #genre{
           text-transform: lowercase;
@@ -272,9 +275,7 @@
           white-space: nowrap;
           font-weight: bold;
           margin-top: 1.0vmin;
-          
           color: #e3d25f;
-          
         }
         #centerwrap {
           display: flex;
@@ -285,13 +286,15 @@
           display: flex;
           flex-direction: column;
           flex: 1;
-          overflow: hidden;
+          padding-right: 2.5vmin;
+          /*overflow: hidden;*/
         }
         #playerright{
           position: relative;
           align-items: center;
           justify-content: center;
           display: flex;
+          overflow: hidden;
         }
         #playercontrols{ }
         #cover {
@@ -316,11 +319,12 @@
           padding: 2vmin;
           width: 10vmin;
           height: 10vmin;
-          stroke: #fff;
+          stroke: #e3d25f;
+          fill: #fff;
           position: absolute;
           right: 0;
           bottom: 0;
-          fill: none;
+          /*fill: none;*/
           stroke-width: 2px;
         }
         #favorite.active{
@@ -531,6 +535,7 @@
         @media (orientation: portrait) {
           #playerleft{
             flex: none;
+            padding: 0;
           }
           #playerright{
             flex: 1;
@@ -702,7 +707,6 @@
         </div>
       </div>
     
-    
       <div id="bottomnav" class="blured">
         <div class="bnitem button" id="bnbutton0" data-target="playlisttoggle">
           <svg viewBox="0 0 24 24" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -758,7 +762,6 @@
         </div>
         <div id="bnsuffix">
           <div class="bnsep"></div>
-          
           <div class="bnitem button" id="bnbutton5" data-target="randomtoggle">
             <svg id="bnrandom" class="hidden" viewBox="0 0 24 24" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <path d="M18 4l3 3l-3 3" />
@@ -773,7 +776,6 @@
               <path d="M21 7l-18 0" />
             </svg>
           </div>
-
           <div class="bnitem button" id="bnbutton6" data-target="walkrepeat">
             <svg id="bnrepeat" class="hidden" viewBox="0 0 24 24" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -797,8 +799,7 @@
           </div>
         </div>
       </div><!-- bottomnav -->
-    
-    </div>
+    </div><!-- #player -->
     
     <div id="playlist">
       <div id="playlistcontent">
@@ -1137,6 +1138,7 @@
             this._timer      = null;
             this._interval   = 5; //minutes
             this._root.addEventListener('click', this.resume.bind(this), false);
+            this._root.addEventListener('mousedown', (event)=>{event.stopPropagation();}, false);
           }
           start(){
             if(this._timer) clearTimeout(this._timer);
@@ -1238,6 +1240,7 @@
                 }
                 //getId("genre").textContent=data.genre;
                 genre.text(data.genre);
+                setTimeout(()=>layout.adjust(), 200);
                 if(this._imghash!=data.imghash){
                   this._imghash=data.imghash;
                   let coverimage = new Image;
@@ -1359,10 +1362,16 @@
             return !this._root.hasClass('invisible');
           }
           hide(){
-            if(this.visible()) this._root.classList.add('invisible');
+            if(this.visible()) {
+              this._root.classList.add('invisible');
+              getId("timerwrapper").classList.remove("progress");
+            }
           }
           show(){
-            if(!this.visible()) this._root.classList.remove('invisible');
+            if(!this.visible()) {
+              this._root.classList.remove('invisible');
+              getId("timerwrapper").classList.add("progress");
+            }
           }
           seek(event){
             let payload=((100*(unify(event).clientX-getId("centerwrap").offsetLeft)/this._handle.clientWidth) | 0);
@@ -1520,9 +1529,12 @@
           }
           text(val){
             if(this._text==val) return;
-            this._ready = false;
             this._text=val;
-            this._child.textContent = val;
+            this.init();
+          }
+          init(){
+            this._ready = false;
+            this._child.textContent = this._text;
             this._scrollwidth = 0;
             this._offset = 0;
             this._width = this._slave.offsetWidth;
@@ -1578,7 +1590,8 @@
             const isprogress = this._local && playlist.isplaying();
             const d = new Date(isprogress?this._elapsed:this._ms);
             const uh = d.getUTCHours()
-            this._part1=!isprogress?`${this._pad(d.getHours())}:${this._pad(d.getMinutes())}`:uh==0?`${this._pad(d.getMinutes())}:${this._pad(d.getSeconds())}`:`${uh}:${this._pad(d.getMinutes())}`;
+            this._part1=!isprogress?`${this._pad(d.getHours())}:${this._pad(d.getMinutes())}`
+                  :uh==0?`${this._pad(d.getMinutes())}:${this._pad(d.getSeconds())}`:`${uh}:${this._pad(d.getMinutes())}`;
             this._part2=!isprogress?this._pad(d.getSeconds()):uh==0?' ':this._pad(d.getSeconds());
           }
           _process(){
@@ -1615,7 +1628,6 @@
             this._currenttext = undefined;
           }
           set(text, bg="rgba(159,3,7,0.8)"){
-            /*--bg: rgba(159,3,7,0.8);*/
             if(this._currenttext==text) return;
             this._currenttext=text;
             if(text!=''){
@@ -1649,7 +1661,40 @@
           visible(){
             return this._visible;
           }
-        }
+        } /* end of Popup */
+        /*****************************************************************/
+        class Layout {
+          constructor(){
+            this._timerwrapper = getId("timerwrapper");
+            this._genrewrap = getId("genrewrap");
+            this._cover = getId("cover");
+            this._favorite = getId("favorite");
+            window.addEventListener("resize", this._resize.bind(this));
+          }
+          adjust(){
+            this._height = window.innerHeight;
+            this._width = window.innerWidth;
+            this._portrait = this._width<=this._height;
+            if(this._timerwrapper.clientWidth>0 && !this._portrait){
+              this._genrewrap.hide();
+              this._genrewrap.style.width = this._timerwrapper.clientWidth+"px";
+              this._genrewrap.show();
+              this._favorite.style.right = Math.abs(this._cover.offsetLeft)+"px";
+              this._favorite.style.bottom = 0;
+            }else{
+              this._favorite.style.right = 0;
+              this._genrewrap.style.width = "auto";
+            }
+          }
+          _resize(event){
+            this.adjust();
+            title.init();
+            song.init();
+            genre.init();
+          }
+        } /* end of Layout */
+        /*****************************************************************/
+        
         var title       = new Scroller(getId("title"), 5, 10, true);      /* element, duration, delay, enabled */
         var song        = new Scroller(getId("song"), 5, 8, true);        /* element, duration, delay, enabled */
         var genre       = new Scroller(getId("genrewrap"), 5, 15, true);  /* element, duration, delay, enabled */
@@ -1662,6 +1707,7 @@
         var websocket   = new wsClient(hostname, port);
         var timers      = new Timers();
         var popup       = new Popup();
+        var layout      = new Layout();
         
         var lockControls = false; // wait for moode feedback
         function controlsLock(){

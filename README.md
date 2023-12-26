@@ -97,7 +97,8 @@ chromium-browser --app="http://localhost/moodeface.html" \
 - **KEY_ENTER** - play
 - **KEY_HOME** - close playlist
 
-**PS:** each command is bound to several keys. The full list of assigned keys can be seen in the file [moodeface.html](moodeface.html#L724)
+**PS:** each command is bound to several keys. The full list of assigned keys can be seen in the file [moodeface.html](moodeface.html#L817)
+
 ### 3.5 triggerhappy
 ```
 cat /etc/triggerhappy/triggers.d/media.conf
@@ -112,6 +113,9 @@ KEY_RIGHT    1  echo next  > /tmp/mfpipe
 ```
 
 ## 4. history
+#### v0.0.580 [2023.12.26]
+- added a layout setting when rotating the screen
+
 #### v0.0.559 [2023.12.21]
 - fixed a bug in displaying playback progress in portrait mode
 
