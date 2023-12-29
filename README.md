@@ -113,6 +113,10 @@ KEY_RIGHT    1  echo next  > /tmp/mfpipe
 ```
 
 ## 4. history
+#### v0.0.593 [2023.12.29]
+- fixed missing idle events when playing a local file
+- some layout fixes
+
 #### v0.0.580 [2023.12.26]
 - added a layout setting when rotating the screen
 

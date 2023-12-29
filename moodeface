@@ -46,7 +46,7 @@ LOGLEVEL  = logging.INFO
 MPD_PLAYLIST_ROOT = '/var/lib/mpd/playlists/'
 
 APPNAME = "moOde fAce"
-VERSION = "0.0.580"
+VERSION = "0.0.593"
 
 class mpdPlayer:
     
@@ -336,6 +336,11 @@ class MpdWatcher:
                 duration = float(self.client.mpd().status()['duration'])
                 self.song_info['elapsed'] = round(elapsed*1000)
                 self.song_info['duration'] = round(duration*1000)
+                if self._currentSong['file']!=self.client.mpd().currentsong()['file']:
+                    logging.debug('======================== fix missed in idle =========================')
+                    logging.debug(self.client.mpd().currentsong()['file'])
+                    self.startup()
+                    os.popen("mpc volume")
             else:
                 self.song_info['elapsed'] = 0
                 self.song_info['duration'] = 0
